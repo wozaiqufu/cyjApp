@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <QThread>
 #include "NetAccess.h"
-//class NetAccess_SICK;
+#include "canobj.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,10 +25,13 @@ private slots:
     void slot_on_requestSICK_once();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
-    void slot_on_tcpSocketError(QAbstractSocket::SocketError);
+    void slot_on_initCAN();
+    void slot_on_readFrame();
+    void slot_on_sendFrame();
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
+    CANobj m_can;
     QTimer m_timer_SICK;
     QThread m_thread_SICK;
 };

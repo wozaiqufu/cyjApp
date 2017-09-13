@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -11,7 +12,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_once()));
     connect(ui->pushButton_3,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_Permanent()));
     connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
-    connect(&m_sickObj,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_tcpSocketError(QAbstractSocket::SocketError)));
+    connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
+    connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
+    connect(ui->pushButton_7,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
     connect(&m_sickObj,SIGNAL(sigUpdateData(QString)),ui->label_SICKData,SLOT(setText(QString)));
 }
 
@@ -48,9 +51,17 @@ void MainWindow::slot_on_requestSICK_PermanentStop(){
     emit sig_stopPermanentReq();
 }
 
-void MainWindow::slot_on_tcpSocketError(QAbstractSocket::SocketError)
+void MainWindow::slot_on_initCAN()
 {
-    QMessageBox msg;
-    msg.setText("fatal error for SICK Socket,please refer to SocketError in slot_on_error");
-    msg.exec();
+    m_can.initCAN(0);
+}
+
+void MainWindow::slot_on_readFrame()
+{
+    m_can.slot_on_receiveFrame();
+}
+
+void MainWindow::slot_on_sendFrame()
+{
+    //m_can.slot_on_sendFrame();
 }

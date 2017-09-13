@@ -16,11 +16,13 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     CAN_SJA1000.cpp \
     NAV_Control.cpp \
-    NetAccess.cpp
+    NetAccess.cpp \
+    canobj.cpp
 
 HEADERS  += mainwindow.h \
     CAN_SJA1000.h \
     NAV_Control.h \
-    NetAccess.h
+    NetAccess.h \
+    canobj.h
 
 FORMS    += mainwindow.ui
