@@ -43,6 +43,9 @@ private:
     struct sockaddr_can m_addr;
     struct can_frame m_frameSend;
     struct can_frame m_frameRecv;
+    struct can_filter m_filter_AngularSensor;
+    struct timeval m_tv;
+    fd_set m_rset;
 };
 
 #endif // CANOBJ_H
