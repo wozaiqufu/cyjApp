@@ -112,14 +112,14 @@
       <item row="2" column="0">
        <widget class="QPushButton" name="pushButton_7">
         <property name="text">
-         <string>read data</string>
+         <string>rwrite data</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="pushButton_6">
         <property name="text">
-         <string>write data</string>
+         <string>read data</string>
         </property>
        </widget>
       </item>

@@ -1,19 +1,20 @@
 #include "canobj.h"
 #include <QDebug>
 
-CANobj::CANobj(QObject *parent) : QObject(parent) {
+CANobj::CANobj(QObject *parent) : QObject(parent)
+  ,m_s(0)
+{
 
 }
 
 bool CANobj::initCAN(const int portIndex){
-    int s;
     int ret;
     if(0 == portIndex) {//CAN0 is used!
    /*********************step 1**********************/
         //create the CAN Socket
         srand(time(NULL));
-        s = socket(PF_CAN,SOCK_RAW,CAN_RAW);
-        if(s<0) {
+        m_s = socket(PF_CAN,SOCK_RAW,CAN_RAW);
+        if(m_s<0) {
             qDebug()<<"CAN initialization failed!";
             return false;
         }
@@ -23,14 +24,14 @@ bool CANobj::initCAN(const int portIndex){
      //strcpy(ifr.ifr_name, "can0");
     strcpy(m_ifr.ifr_name,"can0");
     qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
-    ret = ioctl(s,SIOCGIFINDEX,&m_ifr);
+    ret = ioctl(m_s,SIOCGIFINDEX,&m_ifr);
     if(ret<0) {
         qDebug()<<"ioctl failed!";
         return false;
     }
     m_addr.can_family = PF_CAN;
     m_addr.can_ifindex = m_ifr.ifr_ifindex;
-    ret = bind(s,(struct sockaddr*)&m_addr,sizeof(m_addr));
+    ret = bind(m_s,(struct sockaddr*)&m_addr,sizeof(m_addr));
     if(ret<0) {
         qDebug()<<"bind failed!";
         return false;
@@ -39,7 +40,7 @@ bool CANobj::initCAN(const int portIndex){
     //setup CAN filters
     m_filter_AngularSensor.can_id = 0x1F1|CAN_EFF_FLAG;
     m_filter_AngularSensor.can_mask = 0xFFF;
-    ret = setsockopt(s,SOL_CAN_RAW,CAN_RAW_FILTER,&m_filter_AngularSensor,sizeof(m_filter_AngularSensor));
+    ret = setsockopt(m_s,SOL_CAN_RAW,CAN_RAW_FILTER,&m_filter_AngularSensor,sizeof(m_filter_AngularSensor));
     if(ret<0) {
         qDebug()<<"filter setup failed!";
     }
@@ -48,18 +49,19 @@ bool CANobj::initCAN(const int portIndex){
 
 void CANobj::slot_on_receiveFrame()
 {
-//    m_tv.tv_sec = 1;
-//    m_tv.tv_usec = 0;
-//    FD_ZERO(&m_rset);
-//    FD_SET(m_fd)
-    int s;
-    int nbytes = read(s,&m_frameRecv,sizeof(struct can_frame));
-    if(nbytes<(int)sizeof(m_frameRecv)) {
-        qDebug()<<"not enough data in one frame!";
+    m_tv.tv_sec = 1;
+    m_tv.tv_usec = 0;
+    FD_ZERO(&m_rset);
+    FD_SET(m_s,&m_rset);
+    int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
+    if(0 == ret) {
+        qDebug()<<"select timeout!";
     }
-    else {
-        extractFrame();
+    ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
+    if(0 == ret) {
+        qDebug()<<"sead failed!";
     }
+    printFrame(&m_frameRecv);
 }
 
 void CANobj::slot_on_sendFrame(const int id, const int length, int *data)
@@ -81,5 +83,16 @@ void CANobj::slot_on_sendFrame(const int id, const int length, int *data)
 void CANobj::extractFrame()
 {
 
+}
+
+void CANobj::printFrame(can_frame *frame)
+{
+    printf("%08x\n",frame->can_id & CAN_EFF_MASK);
+    printf("dlc=%d\n",frame->can_dlc);
+    printf("data = ");
+    for(int i=0;i<frame->can_dlc;i++) {
+        //printf("%02x",frame->data[i]);
+        qDebug()<<frame->data[i];
+    }
 }
 

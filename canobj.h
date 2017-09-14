@@ -38,7 +38,9 @@ public slots:
     void slot_on_sendFrame(const int id,const int length,int *data);
 private:
     void extractFrame();
+    void printFrame(struct can_frame* frame);
 private:
+    int m_s;
     struct ifreq m_ifr;
     struct sockaddr_can m_addr;
     struct can_frame m_frameSend;
