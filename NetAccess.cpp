@@ -109,6 +109,10 @@ bool NetAccess_SICK::connectSensor(){
     }
 }
 
+void NetAccess_SICK::getMutex(QMutex *mutex) {
+     m_pMutex = mutex;
+}
+
 void NetAccess_SICK::requestSensor(const QString& req){
     if(!m_tcpSocket.isValid()){
         qDebug()<<"unable request SICK!";

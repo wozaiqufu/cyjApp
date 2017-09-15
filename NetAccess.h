@@ -7,6 +7,7 @@
 #include <QTcpSocket>
 #include <math.h>
 #include <QtNetwork/QHostAddress>
+#include <QMutex>
 
 class NetAccess_SICK : public QObject
 {
@@ -14,6 +15,7 @@ class NetAccess_SICK : public QObject
     public:
         NetAccess_SICK(QObject *parent = 0);
         bool connectSensor();
+        void getMutex(QMutex *mutex);
         void requestSensor(const QString& req);
         ~NetAccess_SICK();
 private:
@@ -29,6 +31,7 @@ private slots:
     void slot_on_readMessage();
     void slot_on_error(QAbstractSocket::SocketError);
 private:
+     QMutex* m_pMutex;
     static const int m_hostPort_SICK = 2111;
     static const double m_PI = 3.141592653;
     static const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection

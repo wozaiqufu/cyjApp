@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QMutex>
 #include <QThread>
 #include "NetAccess.h"
 #include "canobj.h"
@@ -28,12 +29,26 @@ private slots:
     void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
+    void slot_on_mainTimer_timeout();
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
     CANobj m_can;
     QTimer m_timer_SICK;
     QThread m_thread_SICK;
+    QTimer m_timer_CAN;
+    QThread m_thread_CAN;
+    QTimer m_timer_main;
+    QMutex* m_pMutex_SICK;
+    QMutex* m_pMutex_CAN;
+    int m_velocity;
+    int m_engineSpeed;
+    int m_gear;
+    int m_courseAngle;
+    int m_spliceAngle;
+    int m_vehicleControlMode;
+    int m_command_accelerator;
+    int m_command_angle;
 };
 
 #endif // MAINWINDOW_H
