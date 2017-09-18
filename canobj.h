@@ -17,6 +17,7 @@
 #include <time.h>
 #include <QObject>
 #include <QMutex>
+#include <QVector>
 
 #ifndef AF_CAN
 #define AF_CAN 29
@@ -38,10 +39,11 @@ public:
      bool initCAN(const int portIndex);
      void getMutex(QMutex *mutex);
 signals:
-    void sigUpdateData(QString);
+    void sigUpdateCAN304(QVector<int>);
+    void sigUpdateCAN305(QVector<int>);
 public slots:
     void slot_on_receiveFrame();
-    void slot_on_sendFrame(const int id,const int length,int *data);
+    void slot_on_sendFrame(ulong id, uchar length, uchar *data);
     void  slot_on_timeout();
 private:
     void extractFrame();
@@ -56,6 +58,8 @@ private:
     struct can_filter m_filter[2];
     struct timeval m_tv;
     fd_set m_rset;
+    QVector<int> m_CAN304;
+    QVector<int> m_CAN305;
 };
 
 #endif // CANOBJ_H

@@ -36,9 +36,9 @@ bool CANobj::initCAN(const int portIndex){
     }
     qDebug()<<"init CAN succeed!";
     /*******************setup CAN filters***********************************************************************************/
-    m_filter[0].can_id = 0x305|CAN_EFF_FLAG;
+    m_filter[0].can_id = 0x304|CAN_EFF_FLAG;
     m_filter[0].can_mask = 0xFFF;
-    m_filter[1].can_id = 0x306|CAN_EFF_FLAG;
+    m_filter[1].can_id = 0x305|CAN_EFF_FLAG;
     m_filter[1].can_mask = 0xFFF;
     ret = setsockopt(m_s,SOL_CAN_RAW,CAN_RAW_FILTER,&m_filter,sizeof(m_filter));
     if(ret<0) {
@@ -69,19 +69,16 @@ void CANobj::slot_on_receiveFrame()
     printFrame(&m_frameRecv);
 }
 
-void CANobj::slot_on_sendFrame(const int id, const int length, int *data)
+void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
-    int s(0);
-    //make m_frameSend available
+    int s;
     m_frameSend.can_id   =   id;
     m_frameSend.can_dlc =   length;
     for(uchar i=0; i < length; i++)
     m_frameSend.data[i] = data[i];
-
-    //send
-    qDebug()<<"begin to print m_frameSend";
     printFrame(&m_frameSend);
     int nbytes=write(s,&m_frameSend,sizeof(m_frameSend));
+    qDebug()<<"nbytes:"<<nbytes;
     if (nbytes!=sizeof(m_frameSend)) {
         qDebug()<<"Send message error senddata\n";
     }
@@ -102,7 +99,26 @@ void CANobj::slot_on_timeout()
     if(0 == ret) {
         qDebug()<<"sead failed!";
     }
-    printFrame(&m_frameRecv);
+    m_CAN304.clear();
+    m_CAN305.clear();
+    for(int i=0;i<m_frameRecv.can_dlc;i++)
+    {
+        if(m_frameRecv.can_id == 0x304)
+        {
+            m_CAN304.push_back(m_frameRecv.data[i]);
+        }
+        else if(m_frameRecv.can_id == 0x305)
+        {
+            m_CAN305.push_back(m_frameRecv.data[i]);
+        }
+        else
+        {
+            return;
+        }
+    }
+    emit sigUpdateCAN304(m_CAN304);
+    emit sigUpdateCAN305(m_CAN305);
+    //printFrame(&m_frameRecv);
 }
 
 void CANobj::extractFrame()
@@ -112,14 +128,14 @@ void CANobj::extractFrame()
 
 void CANobj::printFrame(can_frame *frame)
 {
-    printf("%08x\n",frame->can_id & CAN_EFF_MASK);
-    printf("dlc=%d\n",frame->can_dlc);
+    qDebug()<<"can_id:"<<frame->can_id;
+    qDebug()<<"dlc:"<<frame->can_dlc;
+    //printf("%08x\n",frame->can_id & CAN_EFF_MASK);
+    //printf("dlc=%d\n",frame->can_dlc);
     printf("data = ");
     for(int i=0;i<frame->can_dlc;i++) {
         //printf("%02x",frame->data[i]);
         qDebug()<<frame->data[i];
     }
-    qDebug()<<"printFrame";
-    emit sigUpdateData(QString(frame->data[4]));
 }
 

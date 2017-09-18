@@ -15,23 +15,25 @@ class NetAccess_SICK : public QObject
     public:
         NetAccess_SICK(QObject *parent = 0);
         bool connectSensor();
-        void getMutex(QMutex *mutex);
+        //void getMutex(QMutex *mutex);
         void requestSensor(const QString& req);
+
         ~NetAccess_SICK();
 private:
         void extractData();
 
 signals:
-    void sigUpdateData(QString);
+    void sigUpdateData(QVector<int>);
 public slots:
     void slot_on_timeout();
     void slot_on_requestContinousRead();
     void slot_on_requestContinousRead_Stop();
+    void slot_on_updateSICK();//recieve data from SICKobj
 private slots:
     void slot_on_readMessage();
     void slot_on_error(QAbstractSocket::SocketError);
 private:
-     QMutex* m_pMutex;
+     QMutex m_Mutex;
     static const int m_hostPort_SICK = 2111;
     static const double m_PI = 3.141592653;
     static const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection

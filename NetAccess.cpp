@@ -60,9 +60,7 @@ void NetAccess_SICK::extractData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
-    //qDebug()<<"first data is:"<<m_data[0];
-     qDebug()<<"\n"<<"data in decimal:"<<m_data;
-    emit sigUpdateData(QString::number(m_data[0]));
+     //qDebug()<<"\n"<<"data in decimal:"<<m_data;
 }
 
 void NetAccess_SICK::slot_on_timeout()//request one diagram
@@ -92,6 +90,11 @@ void NetAccess_SICK::slot_on_requestContinousRead_Stop()
     }
 }
 
+void NetAccess_SICK::slot_on_updateSICK()
+{
+
+}
+
 bool NetAccess_SICK::connectSensor(){
     qDebug()<<"connectSensor is triggered!";
     if(m_bIsCoonected){
@@ -109,9 +112,9 @@ bool NetAccess_SICK::connectSensor(){
     }
 }
 
-void NetAccess_SICK::getMutex(QMutex *mutex) {
-     m_pMutex = mutex;
-}
+//void NetAccess_SICK::getMutex(QMutex *mutex) {
+//     m_pMutex = mutex;
+//}
 
 void NetAccess_SICK::requestSensor(const QString& req){
     if(!m_tcpSocket.isValid()){

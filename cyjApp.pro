@@ -18,13 +18,13 @@ SOURCES += main.cpp\
     NAV_Control.cpp \
     NetAccess.cpp \
     canobj.cpp \
-    cdata.cpp
+    surfacecommunication.cpp
 
 HEADERS  += mainwindow.h \
     CAN_SJA1000.h \
     NAV_Control.h \
     NetAccess.h \
     canobj.h \
-    cdata.h
+    surfacecommunication.h
 
 FORMS    += mainwindow.ui

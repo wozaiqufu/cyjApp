@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_gear(0),
   m_courseAngle(0),
   m_spliceAngle(0),
-  m_vehicleControlMode(0),
+  m_vehicleControlMode(1),
   m_command_accelerator(0),
   m_command_angle(0)
 {
@@ -23,18 +23,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
     connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
     connect(ui->pushButton_7,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
-    connect(&m_sickObj,SIGNAL(sigUpdateData(QString)),ui->label_SICKData,SLOT(setText(QString)));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-    m_timer_main.setInterval(50);
-    m_pMutex_CAN = new QMutex;
-    m_pMutex_SICK = new QMutex;
+    m_timer_main.start(100);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete m_pMutex_CAN;
-    delete m_pMutex_SICK;
 }
 
 void MainWindow::slot_on_connectSICK(){
@@ -54,9 +49,9 @@ void MainWindow::slot_on_requestSICK_Permanent()
     //m_timer_SICK.moveToThread(&m_thread_SICK);
     //connect(&m_thread_SICK,SIGNAL(started()),&m_timer_SICK,SLOT(start()));
     connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
+    connect(&m_sickObj,SIGNAL(sigUpdateData(QVector<int>)),this,SLOT(slot_on_updateSICK(QVector<int>)));
     //connect(&m_timer_SICK,SIGNAL(timeout()),&m_sickObj,SLOT(slot_on_timeout()));
     connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
-    connect(&m_sickObj,SIGNAL(sigUpdateData(QString)),ui->label_SICKData,SLOT(setText(QString)));
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
     m_thread_SICK.start(QThread::HighestPriority);
 }
@@ -71,10 +66,10 @@ void MainWindow::slot_on_initCAN()
     m_timer_CAN.setInterval(50);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    //connect(&m_thread_CAN,SIGNAL(started()),&m_can,SLOT(slot_on_requestContinousRead()));
+    connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_on_timeout()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
-    connect(&m_can,SIGNAL(sigUpdateData(QString)),ui->label_CANdata,SLOT(setText(QString)));
     m_can.initCAN(0);
 }
 
@@ -88,13 +83,87 @@ void MainWindow::slot_on_readFrame()
 
 void MainWindow::slot_on_sendFrame()
 {
-    int data[2];
-    data[0] = 10;
-    data[1] = 8;
-    m_can.slot_on_sendFrame(0x20,2,data);
+
 }
 
 void MainWindow::slot_on_mainTimer_timeout()
 {
+//    uchar data[8] = {0,0,0,0,0,0,0,0};
+//    data[0] = 10;
+//    data[1] = 8;
+//    data[2] = 10;
+//    data[3] = 8;
+//    data[4] = 10;
+//    data[5] = 8;
+//    data[6] = 10;
+//    data[7] = 8;
+//    m_can.slot_on_sendFrame(0x0161,8,data);
+    //update vehicle params
+    ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
+    ui->label_velocity->setText(QString::number(m_velocity));
+    ui->label_courseAngle->setText(QString::number(m_courseAngle));
+    ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
+    ui->label_gear->setText(QString::number(m_gear));
+    switch (m_vehicleControlMode)
+    {
+    case 1:
+         ui->label_controlMode->setText("Local");
+        break;
+    case 2:
+         ui->label_controlMode->setText("Visible");
+        break;
+    case 3:
+         ui->label_controlMode->setText("Remote");
+        break;
+    case 4:
+         ui->label_controlMode->setText("Auto");
+        break;
+    default:
+        break;
+    }
+}
 
+void MainWindow::slot_on_updateSICK(QVector<int> vec)
+{
+    if(vec.size()<181)
+    {
+        return;
+    }
+    m_vector_SICK = vec;
+    qDebug()<<"SICK data are:"<<vec;
+}
+
+void MainWindow::slot_on_updateCAN304(QVector<int> vec)
+{
+    if(vec.size()<8)
+    {
+        return;
+    }
+    m_vector_CAN304 = vec;
+    qDebug()<<"CAN304 data are:"<<m_vector_CAN304;
+
+}
+
+void MainWindow::slot_on_updateCAN305(QVector<int> vec)
+{
+    if(vec.size()<8)
+    {
+        return;
+    }
+    m_vector_CAN305 = vec;
+    qDebug()<<"CAN305 data are:"<<m_vector_CAN305;
+    //extract splice angle
+    if(m_vector_CAN305.at(4) == 0)
+    {
+        return;
+    }
+    else
+    {
+        m_spliceAngle = m_vector_CAN305.at(4);
+    }
+    //extract velocity
+    m_velocity = m_vector_CAN305.at(2);
+    //extract engine speed
+    m_engineSpeed = m_vector_CAN305.at(3);
+    //extract
 }
