@@ -37,19 +37,16 @@ class CANobj : public QObject
 public:
     explicit CANobj(QObject *parent = 0);
      bool initCAN(const int portIndex);
-     void getMutex(QMutex *mutex);
 signals:
     void sigUpdateCAN304(QVector<int>);
     void sigUpdateCAN305(QVector<int>);
 public slots:
     void slot_on_receiveFrame();
     void slot_on_sendFrame(ulong id, uchar length, uchar *data);
-    void  slot_on_timeout();
+    void  slot_on_timeout();//timer to refresh data
 private:
-    void extractFrame();
     void printFrame(struct can_frame* frame);
 private:
-    QMutex* m_pMutex;
     int m_s;
     struct ifreq m_ifr;
     struct sockaddr_can m_addr;

@@ -56,6 +56,10 @@ private:
     int m_vehicleControlMode;
     int m_command_accelerator;
     int m_command_angle;
+
+
+    //test
+    int m_aa;
 };
 
 #endif // MAINWINDOW_H

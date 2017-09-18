@@ -13,7 +13,8 @@ MainWindow::MainWindow(QWidget *parent) :
   m_spliceAngle(0),
   m_vehicleControlMode(1),
   m_command_accelerator(0),
-  m_command_angle(0)
+  m_command_angle(0),
+  m_aa(0)
 {
     ui->setupUi(this);
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
@@ -80,24 +81,38 @@ void MainWindow::slot_on_readFrame()
 
     //m_can.slot_on_receiveFrame();
 }
-
+//only for test
 void MainWindow::slot_on_sendFrame()
 {
-
+    uchar data[8] = {0,0,0,0,0,0,0,0};
+    data[0] = 10;
+    data[1] = 8;
+    data[2] = 10;
+    data[3] = 8;
+    data[4] = 10;
+    data[5] = 8;
+    data[6] = 10;
+    data[7] = 8;
+    m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_mainTimer_timeout()
 {
-//    uchar data[8] = {0,0,0,0,0,0,0,0};
-//    data[0] = 10;
-//    data[1] = 8;
-//    data[2] = 10;
-//    data[3] = 8;
-//    data[4] = 10;
-//    data[5] = 8;
-//    data[6] = 10;
-//    data[7] = 8;
-//    m_can.slot_on_sendFrame(0x0161,8,data);
+    if(m_aa>100)
+    {
+        m_aa = 0;
+    }
+    uchar data[8] = {0,0,0,0,0,0,0,0};
+    data[0] = 10;
+    data[1] = 8;
+    data[2] = 10;
+    data[3] = 8;
+    data[4] = 10;
+    data[5] = 8;
+    data[6] = 10;
+    data[7] = m_aa;
+    m_can.slot_on_sendFrame(0x0161,8,data);
+    m_aa++;
     //update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
     ui->label_velocity->setText(QString::number(m_velocity));

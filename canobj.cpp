@@ -36,20 +36,15 @@ bool CANobj::initCAN(const int portIndex){
     }
     qDebug()<<"init CAN succeed!";
     /*******************setup CAN filters***********************************************************************************/
-    m_filter[0].can_id = 0x304|CAN_EFF_FLAG;
-    m_filter[0].can_mask = 0xFFF;
-    m_filter[1].can_id = 0x305|CAN_EFF_FLAG;
-    m_filter[1].can_mask = 0xFFF;
-    ret = setsockopt(m_s,SOL_CAN_RAW,CAN_RAW_FILTER,&m_filter,sizeof(m_filter));
-    if(ret<0) {
-        qDebug()<<"filter setup failed!";
+//    m_filter[0].can_id = 0x304|CAN_EFF_FLAG;
+//    m_filter[0].can_mask = 0xFFF;
+//    m_filter[1].can_id = 0x305|CAN_EFF_FLAG;
+//    m_filter[1].can_mask = 0xFFF;
+//    ret = setsockopt(m_s,SOL_CAN_RAW,CAN_RAW_FILTER,&m_filter,sizeof(m_filter));
+//    if(ret<0) {
+//        qDebug()<<"filter setup failed!";
+//    }
     }
-    }
-}
-
-void CANobj::getMutex(QMutex *mutex)
-{
-    m_pMutex = mutex;
 }
 
 void CANobj::slot_on_receiveFrame()
@@ -71,15 +66,13 @@ void CANobj::slot_on_receiveFrame()
 
 void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
-    int s;
     m_frameSend.can_id   =   id;
     m_frameSend.can_dlc =   length;
     for(uchar i=0; i < length; i++)
     m_frameSend.data[i] = data[i];
     printFrame(&m_frameSend);
-    int nbytes=write(s,&m_frameSend,sizeof(m_frameSend));
-    qDebug()<<"nbytes:"<<nbytes;
-    if (nbytes!=sizeof(m_frameSend)) {
+    int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
+    if (nbytes < 0) {
         qDebug()<<"Send message error senddata\n";
     }
 }
@@ -119,11 +112,6 @@ void CANobj::slot_on_timeout()
     emit sigUpdateCAN304(m_CAN304);
     emit sigUpdateCAN305(m_CAN305);
     //printFrame(&m_frameRecv);
-}
-
-void CANobj::extractFrame()
-{
-
 }
 
 void CANobj::printFrame(can_frame *frame)
