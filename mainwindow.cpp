@@ -18,7 +18,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
-    connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_once()));
     connect(ui->pushButton_3,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_Permanent()));
     connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
@@ -37,27 +36,22 @@ void MainWindow::slot_on_connectSICK(){
     m_sickObj.connectSensor();//if failed,sigal will be sent and this->slot_on_tcpSocketError triggered
     //m_timer_SICK.setInterval(2000);
 }
-void MainWindow::slot_on_requestSICK_once()
-{
-    QString qstr("\x2sRN LMDscandata\x3");
-    m_sickObj.requestSensor(qstr);
-    qDebug()<<"request :"<<qstr<<"has been sent!";
-}
 
 void MainWindow::slot_on_requestSICK_Permanent()
 {
+    //acquire data once:
+    //QString qstr("\x2sRN LMDscandata\x3");
+    //m_sickObj.requestSensor(qstr);
     m_sickObj.moveToThread(&m_thread_SICK);
-    //m_timer_SICK.moveToThread(&m_thread_SICK);
-    //connect(&m_thread_SICK,SIGNAL(started()),&m_timer_SICK,SLOT(start()));
     connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
     connect(&m_sickObj,SIGNAL(sigUpdateData(QVector<int>)),this,SLOT(slot_on_updateSICK(QVector<int>)));
-    //connect(&m_timer_SICK,SIGNAL(timeout()),&m_sickObj,SLOT(slot_on_timeout()));
     connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
     m_thread_SICK.start(QThread::HighestPriority);
 }
 
-void MainWindow::slot_on_requestSICK_PermanentStop(){
+void MainWindow::slot_on_requestSICK_PermanentStop()
+{
     emit sig_stopPermanentReq();
 }
 
@@ -98,21 +92,22 @@ void MainWindow::slot_on_sendFrame()
 
 void MainWindow::slot_on_mainTimer_timeout()
 {
-    if(m_aa>100)
-    {
-        m_aa = 0;
-    }
-    uchar data[8] = {0,0,0,0,0,0,0,0};
-    data[0] = 10;
-    data[1] = 8;
-    data[2] = 10;
-    data[3] = 8;
-    data[4] = 10;
-    data[5] = 8;
-    data[6] = 10;
-    data[7] = m_aa;
-    m_can.slot_on_sendFrame(0x0161,8,data);
-    m_aa++;
+    //test CAN send!
+//    if(m_aa>100)
+//    {
+//        m_aa = 0;
+//    }
+//    uchar data[8] = {0,0,0,0,0,0,0,0};
+//    data[0] = 10;
+//    data[1] = 8;
+//    data[2] = 10;
+//    data[3] = 8;
+//    data[4] = 10;
+//    data[5] = 8;
+//    data[6] = 10;
+//    data[7] = m_aa;
+//    m_can.slot_on_sendFrame(0x0161,8,data);
+//    m_aa++;
     //update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
     ui->label_velocity->setText(QString::number(m_velocity));

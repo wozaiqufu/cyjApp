@@ -25,7 +25,6 @@ private:
 signals:
     void sigUpdateData(QVector<int>);
 public slots:
-    void slot_on_timeout();
     void slot_on_requestContinousRead();
     void slot_on_requestContinousRead_Stop();
     void slot_on_updateSICK();//recieve data from SICKobj
@@ -33,7 +32,7 @@ private slots:
     void slot_on_readMessage();
     void slot_on_error(QAbstractSocket::SocketError);
 private:
-     QMutex m_Mutex;
+    QMutex m_Mutex;
     static const int m_hostPort_SICK = 2111;
     static const double m_PI = 3.141592653;
     static const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection

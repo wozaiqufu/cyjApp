@@ -23,7 +23,6 @@ signals:
     void sig_stopPermanentReq();
 private slots:
     void slot_on_connectSICK();
-    void slot_on_requestSICK_once();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
     void slot_on_initCAN();

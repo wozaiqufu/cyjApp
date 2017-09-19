@@ -33,20 +33,20 @@ void NetAccess_SICK::extractData()
     //crop Starting Angle
     int startAngle_End = m_dataRecieved.indexOf(" ",zerosStartPos);
     QByteArray startAngle = m_dataRecieved.mid(zerosStartPos,startAngle_End-zerosStartPos);
-    qDebug()<<"startAngle:"<<startAngle;
+    //qDebug()<<"startAngle:"<<startAngle;
     //crop Angular step width
     int AngularStep_Begin = startAngle_End + 1;
     QByteArray angularStep = m_dataRecieved.mid(AngularStep_Begin,m_dataRecieved.indexOf(" ",AngularStep_Begin)-AngularStep_Begin);
-    qDebug()<<"angular step:"<<angularStep;
+    //qDebug()<<"angular step:"<<angularStep;
     //crop Number Data
     int NumberData_Begin = m_dataRecieved.indexOf(" ",AngularStep_Begin) + 1;
     QByteArray numberData = m_dataRecieved.mid(NumberData_Begin,m_dataRecieved.indexOf(" ",NumberData_Begin)-NumberData_Begin);
-    qDebug()<<"number data in Hex:"<<numberData;
+    //qDebug()<<"number data in Hex:"<<numberData;
     //crop Data:in order to completely crop data,we need to transform Hex to Decimal
     bool ok;
     m_numberDataOneSocket = numberData.toInt(&ok,16);
     int data_index = m_dataRecieved.indexOf(" ",NumberData_Begin) +1;
-     qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
+     //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
     //crop data begins
      m_data.clear();//CAUTION!m_data vector must be cleaned before new data is pushed!
      for(int i=0;i<m_numberDataOneSocket;i++)
@@ -60,16 +60,8 @@ void NetAccess_SICK::extractData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
+     emit sigUpdateData(m_data);
      //qDebug()<<"\n"<<"data in decimal:"<<m_data;
-}
-
-void NetAccess_SICK::slot_on_timeout()//request one diagram
-{
-    if(m_bIsCoonected){
-        QString qstr("\x2sRN LMDscandata\x3");
-        qDebug()<<"request at:"<<QTime::currentTime();
-        requestSensor(qstr);
-    }
 }
 
 void NetAccess_SICK::slot_on_requestContinousRead()//request permanent diagram
@@ -111,10 +103,6 @@ bool NetAccess_SICK::connectSensor(){
         }
     }
 }
-
-//void NetAccess_SICK::getMutex(QMutex *mutex) {
-//     m_pMutex = mutex;
-//}
 
 void NetAccess_SICK::requestSensor(const QString& req){
     if(!m_tcpSocket.isValid()){
