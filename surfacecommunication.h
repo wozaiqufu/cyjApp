@@ -2,6 +2,7 @@
 #define SURFACECOMMUNICATION_H
 
 #include <QObject>
+#include <QUdpSocket>
 
 class SurfaceCommunication : public QObject
 {
@@ -12,6 +13,8 @@ public:
 signals:
 
 public slots:
+private:
+    QUdpSocket m_udpSocket;
 };
 
 #endif // SURFACECOMMUNICATION_H

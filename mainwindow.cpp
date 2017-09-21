@@ -44,9 +44,10 @@ void MainWindow::slot_on_requestSICK_Permanent()
     //m_sickObj.requestSensor(qstr);
     m_sickObj.moveToThread(&m_thread_SICK);
     connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
-    connect(&m_sickObj,SIGNAL(sigUpdateData(QVector<int>)),this,SLOT(slot_on_updateSICK(QVector<int>)));
     connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
+    connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
+    connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
     m_thread_SICK.start(QThread::HighestPriority);
 }
 
@@ -133,14 +134,14 @@ void MainWindow::slot_on_mainTimer_timeout()
     }
 }
 
-void MainWindow::slot_on_updateSICK(QVector<int> vec)
+void MainWindow::slot_on_updateCourseAngle(int angle)
 {
-    if(vec.size()<181)
-    {
-        return;
-    }
-    m_vector_SICK = vec;
-    qDebug()<<"SICK data are:"<<vec;
+
+}
+
+void MainWindow::slot_on_updateLateralOffset(int offset)
+{
+
 }
 
 void MainWindow::slot_on_updateCAN304(QVector<int> vec)

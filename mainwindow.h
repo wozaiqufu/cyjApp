@@ -30,7 +30,8 @@ private slots:
     void slot_on_sendFrame();
     void slot_on_mainTimer_timeout();
 public slots:
-    void slot_on_updateSICK(QVector<int> vec);
+    void slot_on_updateCourseAngle(int angle);
+    void slot_on_updateLateralOffset(int offset);
     void slot_on_updateCAN304(QVector<int> vec);
     void slot_on_updateCAN305(QVector<int> vec);
 private:
@@ -42,9 +43,6 @@ private:
     QTimer m_timer_CAN;
     QThread m_thread_CAN;
     QTimer m_timer_main;
-//    QMutex* m_pMutex_SICK;
-//    QMutex* m_pMutex_CAN;
-    QVector<int> m_vector_SICK;
     QVector<int> m_vector_CAN304;
     QVector<int> m_vector_CAN305;
     int m_velocity;
