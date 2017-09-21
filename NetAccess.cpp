@@ -11,6 +11,7 @@ NetAccess_SICK::NetAccess_SICK(QObject* parent)
     , m_bIsForwardConnected(false)
     ,m_bIsBackwardConnected(false)
     ,m_numberDataOneSocket(0)
+    ,m_currentDirection(Forward)
 {
     connect(&m_tcpSocket_forward,SIGNAL(readyRead()),this,SLOT(slot_on_readMessage_forward()));
     connect(&m_tcpSocket_forward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_forward_error(QAbstractSocket::SocketError)));
@@ -66,9 +67,12 @@ void NetAccess_SICK::extractData()
          }
          data_index = m_dataRecieved_forward.indexOf(" ",data_index) + 1;
      }
-     qDebug()<<"\n"<<"m_data_forward in decimal:"<<m_data_forward;
+     //qDebug()<<"\n"<<"m_data_forward in decimal:"<<m_data_forward;
+     //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
+
      /***********************backward************************************/
      if(m_dataRecieved_backward.isEmpty()){
+         qDebug()<<"m_dataRecieved_backward is empty";
          return;
      }
      //if using the permanent mode,the first diagram is the confirmation,not the DATA
@@ -106,18 +110,59 @@ void NetAccess_SICK::extractData()
           }
           data_index = m_dataRecieved_backward.indexOf(" ",data_index) + 1;
       }
-      qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
+      //qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
 }
 
 //calculate course angle
 int NetAccess_SICK::courseAngle()
 {
-
+    //qDebug()<<"courseAngle is triggered!";
+     //qDebug()<<"m_currentDirection:"<<m_currentDirection;
+    int courseAngle = 1;
+    if(m_currentDirection==Forward)//forward:use forward SICK
+    {
+        if(m_data_forward.size()==181)
+        {
+            courseAngle = m_data_forward[0];
+        }
+        //after some calculation
+       return courseAngle;
+    }
+    else//backward:use backward SICK
+    {
+        if(m_data_backward.size()!=181)
+        {
+            //qDebug()<<"Error in courseAngle Backward";
+        }
+        //after some calculation
+       return courseAngle;
+    }
 }
 
-//calculate lateral offset
+//calculate lateral offset use both
 int NetAccess_SICK::lateralOffset()
 {
+    qDebug()<<"courseAngle is triggered!";
+     qDebug()<<"m_currentDirection:"<<m_currentDirection;
+    int lateral = 1;
+    if(m_currentDirection==Forward)//forward:use forward SICK
+    {
+        if(m_data_forward.size()==181)
+        {
+            lateral = m_data_forward[180]-m_data_forward[0];
+        }
+        //after some calculation
+       return lateral;
+    }
+    else//backward:use backward SICK
+    {
+        if(m_data_backward.size()==181)
+        {
+            lateral = m_data_backward[180]-m_data_backward[0];
+        }
+        //after some calculation
+       return lateral;
+    }
 
 }
 
@@ -143,6 +188,11 @@ void NetAccess_SICK::slot_on_requestContinousRead_Stop()
         qDebug()<<"request at:"<<QTime::currentTime();
         requestSensor(qstr);
     }
+}
+
+void NetAccess_SICK::slot_on_updateDirection(int direction)
+{
+    m_currentDirection = static_cast<Direction>(direction);
 }
 
 bool NetAccess_SICK::connectSensor()
@@ -216,6 +266,8 @@ void NetAccess_SICK::slot_on_readMessage_forward(){
     //one data has 2 bytes
     //qDebug()<<"m_dataRecieved:"<<m_dataRecieved<<"at"<<QTime::currentTime();
     extractData();//vector m_data stores the final 180 data
+    emit sigUpdateCourseAngle(courseAngle());
+    emit sigUpdateLateralOffset(lateralOffset());
 }
 
 void NetAccess_SICK::slot_on_readMessage_backward()
@@ -224,6 +276,8 @@ void NetAccess_SICK::slot_on_readMessage_backward()
     //one data has 2 bytes
     //qDebug()<<"m_dataRecieved:"<<m_dataRecieved<<"at"<<QTime::currentTime();
     extractData();//vector m_data stores the final 180 data
+    emit sigUpdateCourseAngle(courseAngle());
+     emit sigUpdateLateralOffset(lateralOffset());
 }
 
 void NetAccess_SICK::slot_on_forward_error(QAbstractSocket::SocketError)

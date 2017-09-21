@@ -127,7 +127,7 @@
      <rect>
       <x>40</x>
       <y>200</y>
-      <width>431</width>
+      <width>571</width>
       <height>121</height>
      </rect>
     </property>
@@ -139,29 +139,15 @@
       <rect>
        <x>10</x>
        <y>20</y>
-       <width>391</width>
-       <height>91</height>
+       <width>521</width>
+       <height>81</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="1">
-       <widget class="QLabel" name="label_courseAngle">
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_spliceAngle">
         <property name="text">
          <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>CourseAngle</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>ControlMode</string>
         </property>
        </widget>
       </item>
@@ -172,10 +158,24 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="label_velocity">
+      <item row="1" column="1">
+       <widget class="QLabel" name="label_courseAngle">
         <property name="text">
          <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>ControlMode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>CourseAngle</string>
         </property>
        </widget>
       </item>
@@ -186,10 +186,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="label_8">
+      <item row="0" column="4">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Gear</string>
+         <string>Direction</string>
         </property>
        </widget>
       </item>
@@ -200,8 +200,15 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_spliceAngle">
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>Gear</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QLabel" name="label_controlMode">
         <property name="text">
          <string>TextLabel</string>
         </property>
@@ -221,8 +228,36 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
-       <widget class="QLabel" name="label_controlMode">
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_velocity">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLabel" name="label_direction">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>LateralOff</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="4">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Direction</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QLabel" name="label_lateralOffset">
         <property name="text">
          <string>TextLabel</string>
         </property>

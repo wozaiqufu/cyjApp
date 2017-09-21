@@ -9,12 +9,11 @@
 #include <QtNetwork/QHostAddress>
 #include <QMutex>
 
-enum DrivingDir{Forward,Backward};
-
 class NetAccess_SICK : public QObject
 {
     Q_OBJECT
     public:
+        enum Direction{Forward = 0,Backward};//default Forward==0
         NetAccess_SICK(QObject *parent = 0);
         bool connectSensor();
         //void getMutex(QMutex *mutex);
@@ -32,6 +31,7 @@ signals:
 public slots:
     void slot_on_requestContinousRead();
     void slot_on_requestContinousRead_Stop();
+    void slot_on_updateDirection(int direction);
 private slots:
     void slot_on_readMessage_forward();
      void slot_on_readMessage_backward();
@@ -54,5 +54,11 @@ private:
     QHostAddress m_address_Host;
     bool m_bIsForwardConnected;
     bool m_bIsBackwardConnected;
+    Direction m_currentDirection;
+    static const double m_pi = 3.141592653;
+    static const double m_Angle_degree2Radian = 0.0174532925;
+    static const int m_angleStart = 0;
+    static const int m_angleMaxDelta = 30;
+
 };
 #endif

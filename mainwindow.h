@@ -17,10 +17,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum Direction{Forward = 0,Backward};//default Forward==0
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 signals:
     void sig_stopPermanentReq();
+    void sig_informDirection(int);
 private slots:
     void slot_on_connectSICK();
     void slot_on_requestSICK_Permanent();
@@ -50,9 +52,11 @@ private:
     int m_gear;
     int m_courseAngle;
     int m_spliceAngle;
+    int m_lateralOffset;
     int m_vehicleControlMode;
     int m_command_accelerator;
     int m_command_angle;
+    Direction m_direction;
 
 
     //test

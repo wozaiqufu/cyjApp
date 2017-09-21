@@ -79,7 +79,7 @@ void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 
 void CANobj::slot_on_timeout()
 {
-    qDebug()<<"slot_on_timeout";
+    //qDebug()<<"slot_on_timeout";
     m_tv.tv_sec = 1;
     m_tv.tv_usec = 0;
     FD_ZERO(&m_rset);

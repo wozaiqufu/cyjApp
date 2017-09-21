@@ -11,10 +11,12 @@ MainWindow::MainWindow(QWidget *parent) :
   m_gear(0),
   m_courseAngle(0),
   m_spliceAngle(0),
+  m_lateralOffset(0),
   m_vehicleControlMode(1),
   m_command_accelerator(0),
   m_command_angle(0),
-  m_aa(0)
+  m_aa(0),
+  m_direction(Forward)
 {
     ui->setupUi(this);
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
@@ -46,6 +48,7 @@ void MainWindow::slot_on_requestSICK_Permanent()
     connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
     connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
+    connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
     m_thread_SICK.start(QThread::HighestPriority);
@@ -109,11 +112,21 @@ void MainWindow::slot_on_mainTimer_timeout()
 //    data[7] = m_aa;
 //    m_can.slot_on_sendFrame(0x0161,8,data);
 //    m_aa++;
+    /***************************************************************************************
+     * ************************************************************************************/
+    //send command to PLC,be careful
+
+    //if(send forward)
+    emit sig_informDirection(Forward);
+    //if(send backward)
+    //emit sig_informDirection(Backward);
+
     //update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
     ui->label_velocity->setText(QString::number(m_velocity));
     ui->label_courseAngle->setText(QString::number(m_courseAngle));
     ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
+    ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_gear));
     switch (m_vehicleControlMode)
     {
@@ -132,16 +145,26 @@ void MainWindow::slot_on_mainTimer_timeout()
     default:
         break;
     }
+
+    if(m_direction ==Forward)
+    {
+        ui->label_direction->setText("Forward");
+    }
+    if(m_direction ==Backward)
+    {
+        ui->label_direction->setText("Backward");
+    }
 }
 
 void MainWindow::slot_on_updateCourseAngle(int angle)
 {
+    m_courseAngle = angle;
 
 }
 
 void MainWindow::slot_on_updateLateralOffset(int offset)
 {
-
+    m_lateralOffset = offset;
 }
 
 void MainWindow::slot_on_updateCAN304(QVector<int> vec)
