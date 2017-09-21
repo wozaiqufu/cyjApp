@@ -13,10 +13,10 @@ NetAccess_SICK::NetAccess_SICK(QObject* parent)
     ,m_numberDataOneSocket(0)
 {
     connect(&m_tcpSocket_forward,SIGNAL(readyRead()),this,SLOT(slot_on_readMessage_forward()));
-    connect(&m_tcpSocket_forward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_error(QAbstractSocket::SocketError)));
+    connect(&m_tcpSocket_forward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_forward_error(QAbstractSocket::SocketError)));
 
     connect(&m_tcpSocket_backward,SIGNAL(readyRead()),this,SLOT(slot_on_readMessage_backward()));
-    connect(&m_tcpSocket_backward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_error(QAbstractSocket::SocketError)));
+    connect(&m_tcpSocket_backward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_backward_error(QAbstractSocket::SocketError)));
 }
 
 NetAccess_SICK::~NetAccess_SICK(){
@@ -66,8 +66,7 @@ void NetAccess_SICK::extractData()
          }
          data_index = m_dataRecieved_forward.indexOf(" ",data_index) + 1;
      }
-     emit sigUpdateData(m_data_forward);
-     //qDebug()<<"\n"<<"data in decimal:"<<m_data;
+     qDebug()<<"\n"<<"m_data_forward in decimal:"<<m_data_forward;
      /***********************backward************************************/
      if(m_dataRecieved_backward.isEmpty()){
          return;
@@ -91,7 +90,6 @@ void NetAccess_SICK::extractData()
      numberData = m_dataRecieved_backward.mid(NumberData_Begin,m_dataRecieved_forward.indexOf(" ",NumberData_Begin)-NumberData_Begin);
      //qDebug()<<"number data in Hex:"<<numberData;
      //crop Data:in order to completely crop data,we need to transform Hex to Decimal
-     ok;
      m_numberDataOneSocket = numberData.toInt(&ok,16);
      data_index = m_dataRecieved_backward.indexOf(" ",NumberData_Begin) +1;
       //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
@@ -108,8 +106,7 @@ void NetAccess_SICK::extractData()
           }
           data_index = m_dataRecieved_backward.indexOf(" ",data_index) + 1;
       }
-      emit sigUpdateData(m_data_backward);
-      //qDebug()<<"\n"<<"data in decimal:"<<m_data;
+      qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
 }
 
 //calculate course angle
@@ -160,9 +157,8 @@ bool NetAccess_SICK::connectSensor()
         m_tcpSocket_forward.connectToHost(m_address_SICK_forward,m_hostPort_SICK);
         if(m_tcpSocket_forward.waitForConnected(m_milSecondsWait))
         {
-            qDebug()<<"socket connected!";
+            qDebug()<<"forward socket connected!";
             m_bIsForwardConnected = true;
-            return true;
         }
         else
         {
@@ -170,7 +166,6 @@ bool NetAccess_SICK::connectSensor()
         }
     }
 
-    //qDebug()<<"connectSensor is triggered!";
     if(m_bIsBackwardConnected){
         qDebug()<<" forward tcp client is already connected!";
         return false;
@@ -180,7 +175,7 @@ bool NetAccess_SICK::connectSensor()
         m_tcpSocket_backward.connectToHost(m_address_SICK_backward,m_hostPort_SICK);
         if(m_tcpSocket_backward.waitForConnected(m_milSecondsWait))
         {
-            qDebug()<<"socket connected!";
+            qDebug()<<"backward socket connected!";
             m_bIsBackwardConnected = true;
             return true;
         }
@@ -195,7 +190,7 @@ void NetAccess_SICK::requestSensor(const QString& req)
 {
     if(!m_tcpSocket_forward.isValid())
     {
-        qDebug()<<"unable request  forward SICK!";
+        qDebug()<<"unable request forward SICK!";
     }
     else
     {
@@ -205,7 +200,7 @@ void NetAccess_SICK::requestSensor(const QString& req)
 
     if(!m_tcpSocket_backward.isValid())
         {
-            qDebug()<<"unable request  forward SICK!";
+            qDebug()<<"unable request backward SICK!";
         }
         else
         {
@@ -231,9 +226,12 @@ void NetAccess_SICK::slot_on_readMessage_backward()
     extractData();//vector m_data stores the final 180 data
 }
 
-void NetAccess_SICK::slot_on_error(QAbstractSocket::SocketError)
+void NetAccess_SICK::slot_on_forward_error(QAbstractSocket::SocketError)
 {
-    qDebug()<<"slot_on_error is triggered!";
-    qDebug()<<"forward error:"<<m_tcpSocket_forward.errorString();
+     qDebug()<<"forward error:"<<m_tcpSocket_forward.errorString();
+}
+
+void NetAccess_SICK::slot_on_backward_error(QAbstractSocket::SocketError)
+{
     qDebug()<<"backward error:"<<m_tcpSocket_backward.errorString();
 }

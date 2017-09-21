@@ -35,7 +35,8 @@ public slots:
 private slots:
     void slot_on_readMessage_forward();
      void slot_on_readMessage_backward();
-    void slot_on_error(QAbstractSocket::SocketError);
+    void slot_on_forward_error(QAbstractSocket::SocketError);
+    void slot_on_backward_error(QAbstractSocket::SocketError);
 private:
     QMutex m_Mutex;
     static const int m_hostPort_SICK = 2111;
