@@ -58,7 +58,9 @@ private:
     static const double m_pi = 3.141592653;
     static const double m_Angle_degree2Radian = 0.0174532925;
     static const int m_angleStart = 0;
-    static const int m_angleMaxDelta = 30;
+    static const int m_anglel1l2 = 30;
+    static const int m_angleDeltaMax = 30;
+    int m_courseAngle;
 
 };
 #endif

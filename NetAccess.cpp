@@ -26,6 +26,7 @@ NetAccess_SICK::~NetAccess_SICK(){
 
 void NetAccess_SICK::extractData()
 {
+    qDebug()<<"m_dataRecieved_forward"<<m_dataRecieved_forward;
     /***********************forward************************************/
     if(m_dataRecieved_forward.isEmpty()){
         return;
@@ -118,52 +119,286 @@ int NetAccess_SICK::courseAngle()
 {
     //qDebug()<<"courseAngle is triggered!";
      //qDebug()<<"m_currentDirection:"<<m_currentDirection;
-    int courseAngle = 1;
+    int courseAngle_right = 0;
+    int courseAngle_left = 0;
     if(m_currentDirection==Forward)//forward:use forward SICK
     {
         if(m_data_forward.size()==181)
         {
-            courseAngle = m_data_forward[0];
+            //right side
+            double sumCourse = 0;
+            int validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //l1!=0&&l2!=0
+                if((m_data_forward[m_angleStart+i]==0)||(m_data_forward[m_angleStart+m_anglel1l2+i]==0))
+                {
+                    continue;
+                }
+                //qDebug()<<"Valid count======:"<<validCount;
+                //beta
+                double l1 = m_data_forward[m_angleStart+i];
+                double l2 = m_data_forward[m_angleStart+m_anglel1l2+i];
+                double l3 = sqrt(pow(l1,2)
+                        +pow(l2,2)
+                        -2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+                //qDebug()<<"l3:"<<l3;
+                double cos_beta = (pow(l1,2)+pow(l3,2)-pow(l2,2))/(2*l1*l3);
+                //qDebug()<<"cos_beta"<<cos_beta;
+                double icourse = 90 + (m_angleStart+i) - acos(cos_beta)/m_Angle_degree2Radian;
+                //qDebug()<<"icourse:"<<icourse;
+                //sum of course
+                sumCourse += icourse;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"course angle all l1 l2 are invalid!";
+            }
+            else
+            {
+                courseAngle_right = sumCourse/validCount;
+            }
+
+            //left side
+            sumCourse = 0;
+            validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //l1!=0&&l2!=0
+                if((m_data_forward[180-m_angleStart-i]==0)||(m_data_forward[180-m_angleStart-m_anglel1l2-i]==0))
+                {
+                    continue;
+                }
+                //qDebug()<<"Valid count======:"<<validCount;
+                //beta
+                double l1 = m_data_forward[180-m_angleStart-i];
+                double l2 = m_data_forward[180-m_angleStart-m_anglel1l2-i];
+
+                double l3 = sqrt(pow(l1,2)+pow(l2,2)-2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+                //qDebug()<<"l1:"<<l1;
+                //qDebug()<<"l2:"<<l2;
+                //qDebug()<<"l3:"<<l3;
+                double cos_beta = (pow(l1,2) + pow(l3,2) - pow(l2,2))/(2*l1*l3);
+                //qDebug()<<"beta:"<<acos(cos_beta)/m_Angle_degree2Radian;
+                //sum of beta
+                double icourse = acos(cos_beta)/m_Angle_degree2Radian - 90 - i;
+                //qDebug()<<"icourse"<<icourse;
+                sumCourse += icourse;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"course angle all l1 l2 are invalid!";
+            }
+            else
+            {
+                courseAngle_left = sumCourse/validCount;
+            }
         }
-        //after some calculation
-       return courseAngle;
+       //return (courseAngle_left+courseAngle_right)/2;
+        //qDebug()<<"=====================================================>";
+        //return courseAngle_right;//is ok
+        m_courseAngle = (courseAngle_left+courseAngle_right)/2;
+        return m_courseAngle;
     }
+
     else//backward:use backward SICK
     {
-        if(m_data_backward.size()!=181)
+        if(m_data_backward.size()==181)
         {
-            //qDebug()<<"Error in courseAngle Backward";
+            //right side
+            double sumCourse = 0;
+            int validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //l1!=0&&l2!=0
+                if((m_data_backward[m_angleStart+i]==0)||(m_data_backward[m_angleStart+m_anglel1l2+i]==0))
+                {
+                    continue;
+                }
+                //qDebug()<<"Valid count======:"<<validCount;
+                //beta
+                double l1 = m_data_backward[m_angleStart+i];
+                double l2 = m_data_backward[m_angleStart+m_anglel1l2+i];
+                double l3 = sqrt(pow(l1,2)
+                        +pow(l2,2)
+                        -2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+                //qDebug()<<"l3:"<<l3;
+                double cos_beta = (pow(l1,2)+pow(l3,2)-pow(l2,2))/(2*l1*l3);
+                //qDebug()<<"cos_beta"<<cos_beta;
+                double icourse = 90 + (m_angleStart+i) - acos(cos_beta)/m_Angle_degree2Radian;
+                //qDebug()<<"icourse:"<<icourse;
+                //sum of course
+                sumCourse += icourse;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"course angle all l1 l2 are invalid!";
+            }
+            else
+            {
+                courseAngle_right = sumCourse/validCount;
+            }
+
+            //left side
+            sumCourse = 0;
+            validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //l1!=0&&l2!=0
+                if((m_data_backward[180-m_angleStart-i]==0)||(m_data_backward[180-m_angleStart-m_anglel1l2-i]==0))
+                {
+                    continue;
+                }
+                //qDebug()<<"Valid count======:"<<validCount;
+                //beta
+                double l1 = m_data_backward[180-m_angleStart-i];
+                double l2 = m_data_backward[180-m_angleStart-m_anglel1l2-i];
+
+                double l3 = sqrt(pow(l1,2)+pow(l2,2)-2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+                //qDebug()<<"l1:"<<l1;
+                //qDebug()<<"l2:"<<l2;
+                //qDebug()<<"l3:"<<l3;
+                double cos_beta = (pow(l1,2) + pow(l3,2) - pow(l2,2))/(2*l1*l3);
+                //qDebug()<<"beta:"<<acos(cos_beta)/m_Angle_degree2Radian;
+                //sum of beta
+                double icourse = acos(cos_beta)/m_Angle_degree2Radian - 90 - i;
+                //qDebug()<<"icourse"<<icourse;
+                sumCourse += icourse;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"course angle all l1 l2 are invalid!";
+            }
+            else
+            {
+                courseAngle_left = sumCourse/validCount;
+            }
         }
-        //after some calculation
-       return courseAngle;
+       //return (courseAngle_left+courseAngle_right)/2;
+        qDebug()<<"=====================================================>";
+        //return courseAngle_right;//is ok
+        m_courseAngle = (courseAngle_left+courseAngle_right)/2;
+        return m_courseAngle;
     }
 }
 
-//calculate lateral offset use both
+//calculate lateral offset use both Caution:if return 2000,no available data!
 int NetAccess_SICK::lateralOffset()
 {
-    qDebug()<<"courseAngle is triggered!";
-     qDebug()<<"m_currentDirection:"<<m_currentDirection;
+    //qDebug()<<"courseAngle is triggered!";
+     //qDebug()<<"m_currentDirection:"<<m_currentDirection;
+    //qDebug()<<"m_data_forward"<<m_data_forward;
     int lateral = 1;
     if(m_currentDirection==Forward)//forward:use forward SICK
     {
         if(m_data_forward.size()==181)
         {
-            lateral = m_data_forward[180]-m_data_forward[0];
+            double sumH1 = 0;
+            double sumH2 = 0;
+            double H1 = 0;
+            double H2 = 0;
+            int validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //right side h1
+                double l = m_data_forward[i+m_angleStart];
+                if(l==0)
+                {
+                    continue;
+                }
+                double h1 = l*cos(m_Angle_degree2Radian*(m_courseAngle-i-m_angleStart));
+                qDebug()<<"l"<<l;
+                qDebug()<<"valid:"<<validCount;
+                qDebug()<<"h1:"<<h1;
+                sumH1 +=h1;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"no data for H1";
+                return 2000;
+            }
+            H1 = sumH1/validCount;
+            qDebug()<<"H1"<<H1;
+            validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //left side h2
+                double l = m_data_forward[180-i-m_angleStart];
+                if(l==0)
+                {
+                    continue;
+                }
+                double h2 = l*cos(m_Angle_degree2Radian*(m_courseAngle+i+m_angleStart));
+                sumH2 +=h2;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"no data for H1";
+                return 2000;
+            }
+            H2 = sumH2/validCount;
+
+            lateral = (H2-H1)/2;
+            return lateral;
         }
-        //after some calculation
-       return lateral;
     }
     else//backward:use backward SICK
     {
         if(m_data_backward.size()==181)
         {
-            lateral = m_data_backward[180]-m_data_backward[0];
-        }
-        //after some calculation
-       return lateral;
-    }
+            double sumH1 = 0;
+            double sumH2 = 0;
+            double H1 = 0;
+            double H2 = 0;
+            int validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //right side h1
+                double l = m_data_backward[i+m_angleStart];
+                if(l==0)
+                {
+                    continue;
+                }
+                double h1 = l*cos(m_courseAngle-i-m_angleStart);
+                sumH1 +=h1;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"no data for H1";
+                return 2000;
+            }
+            H1 = sumH1/validCount;
+            validCount = 0;
+            for(int i=0;i<m_angleDeltaMax;i++)
+            {
+                //left side h2
+                double l = m_data_backward[180-i-m_angleStart];
+                if(l==0)
+                {
+                    continue;
+                }
+                double h2 = l*cos(m_courseAngle+i+m_angleStart);
+                sumH2 +=h2;
+                validCount++;
+            }
+            if(validCount==0)
+            {
+                qDebug()<<"no data for H1";
+                return 2000;
+            }
+            H2 = sumH2/validCount;
 
+            lateral = (H2-H1)/2;
+            return lateral;
+        }
+    }
 }
 
 void NetAccess_SICK::slot_on_requestContinousRead()//request permanent diagram
