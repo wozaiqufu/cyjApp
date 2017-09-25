@@ -27,7 +27,6 @@ NetAccess_SICK::~NetAccess_SICK()
 
 void NetAccess_SICK::extractData()
 {
-    qDebug()<<"m_dataRecieved_forward"<<m_dataRecieved_forward;
     /***********************forward************************************/
     if(m_dataRecieved_forward.isEmpty()){
         return;
@@ -71,12 +70,14 @@ void NetAccess_SICK::extractData()
          }
          data_index = m_dataRecieved_forward.indexOf(" ",data_index) + 1;
      }
+     //signal to surface obj
+     emit sigUpdateData(m_data_forward);
      //qDebug()<<"\n"<<"m_data_forward in decimal:"<<m_data_forward;
      //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
 
      /***********************backward************************************/
      if(m_dataRecieved_backward.isEmpty()){
-         qDebug()<<"m_dataRecieved_backward is empty";
+         //qDebug()<<"m_dataRecieved_backward is empty";
          return;
      }
      //if using the permanent mode,the first diagram is the confirmation,not the DATA
@@ -314,9 +315,9 @@ int NetAccess_SICK::lateralOffset()
                     continue;
                 }
                 double h1 = l*cos(m_Angle_degree2Radian*(m_courseAngle-i-m_angleStart));
-                qDebug()<<"l"<<l;
-                qDebug()<<"valid:"<<validCount;
-                qDebug()<<"h1:"<<h1;
+//                qDebug()<<"l"<<l;
+//                qDebug()<<"valid:"<<validCount;
+//                qDebug()<<"h1:"<<h1;
                 sumH1 +=h1;
                 validCount++;
             }
@@ -326,7 +327,7 @@ int NetAccess_SICK::lateralOffset()
                 return 2000;
             }
             H1 = sumH1/validCount;
-            qDebug()<<"H1"<<H1;
+//            qDebug()<<"H1"<<H1;
             validCount = 0;
             for(int i=0;i<m_angleDeltaMax;i++)
             {

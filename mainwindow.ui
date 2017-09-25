@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>698</width>
+    <width>742</width>
     <height>385</height>
    </rect>
   </property>
@@ -69,7 +69,7 @@
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>260</x>
       <y>10</y>
       <width>281</width>
       <height>181</height>
@@ -266,13 +266,45 @@
      </layout>
     </widget>
    </widget>
+   <widget class="QGroupBox" name="groupBox_3">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>30</y>
+      <width>131</width>
+      <height>141</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>surface</string>
+    </property>
+    <widget class="QWidget" name="gridLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>111</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushButton_initSurface">
+        <property name="text">
+         <string>init </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>698</width>
+     <width>742</width>
      <height>25</height>
     </rect>
    </property>

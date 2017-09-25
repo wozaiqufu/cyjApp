@@ -25,8 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
     connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
     connect(ui->pushButton_7,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
+    connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-    m_timer_main.start(100);
+   m_timer_main.start(100);
 }
 
 MainWindow::~MainWindow()
@@ -41,9 +42,6 @@ void MainWindow::slot_on_connectSICK(){
 
 void MainWindow::slot_on_requestSICK_Permanent()
 {
-    //acquire data once:
-    //QString qstr("\x2sRN LMDscandata\x3");
-    //m_sickObj.requestSensor(qstr);
     m_sickObj.moveToThread(&m_thread_SICK);
     connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
     connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
@@ -51,6 +49,8 @@ void MainWindow::slot_on_requestSICK_Permanent()
     connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
+    //communication between surfaceComm and SICK
+    connect(&m_sickObj,SIGNAL(sigUpdateData(QVector<int>)),&m_surfaceComm,SLOT(slot_on_SICKdataUpdate(QVector<int>)));
     m_thread_SICK.start(QThread::HighestPriority);
 }
 
@@ -70,6 +70,19 @@ void MainWindow::slot_on_initCAN()
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_on_timeout()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
+}
+
+void MainWindow::slot_on_initSurface()
+{
+    m_surfaceComm.moveToThread(&m_thread_Surface);
+    m_surfaceComm.init();//UDP objects must be created in the same thread of surfaceComm
+    m_timer_surface.setInterval(2000);
+    m_timer_surface.moveToThread(&m_thread_Surface);
+    connect(&m_thread_Surface,SIGNAL(started()),&m_timer_surface,SLOT(start()));
+    connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
+    connect(this,SIGNAL(sig_informInfo2surface(QVector<int>)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(QVector<int>)));
+    connect(&m_thread_Surface,SIGNAL(finished()),&m_thread_Surface,SLOT(deleteLater()));
+    m_thread_Surface.start();
 }
 
 void MainWindow::slot_on_readFrame()
@@ -93,6 +106,8 @@ void MainWindow::slot_on_sendFrame()
     data[7] = 8;
     m_can.slot_on_sendFrame(0x0161,8,data);
 }
+
+
 
 void MainWindow::slot_on_mainTimer_timeout()
 {
