@@ -20,7 +20,8 @@ NetAccess_SICK::NetAccess_SICK(QObject* parent)
     connect(&m_tcpSocket_backward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_backward_error(QAbstractSocket::SocketError)));
 }
 
-NetAccess_SICK::~NetAccess_SICK(){
+NetAccess_SICK::~NetAccess_SICK()
+{
 
 }
 
@@ -62,6 +63,8 @@ void NetAccess_SICK::extractData()
          QByteArray iData = m_dataRecieved_forward.mid(data_index,m_dataRecieved_forward.indexOf(" ",data_index)-data_index);
          bool ok;
          int iData_Dec = iData.toInt(&ok,16);
+         //if 40000000,returned data*2 is the real value in decimal
+         iData_Dec = 2*iData_Dec;
          if(ok){
              m_data_forward.push_back(iData_Dec);
              //qDebug()<<"the "<<i<<" th data is: "<<iData_Dec;
