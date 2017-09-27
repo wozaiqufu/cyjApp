@@ -1,21 +1,25 @@
 #include "surfacecommunication.h"
 #include <QDebug>
+#include <QThread>
 
 SurfaceCommunication::SurfaceCommunication(QObject *parent) : QObject(parent),
     m_hostAddr("192.168.1.100")//surface ip
 {
+    qDebug()<<"surface construction current thread is:"<<QThread::currentThread();
 }
 
 void SurfaceCommunication::init()
 {
 //    m_pUdpSocket_receiver = new QUdpSocket();
 //    m_pUdpSocket_sender = new QUdpSocket();
-    connect(&m_UdpSocket_receiver,SIGNAL(readyRead()),this,SLOT(readPendingDatagrams()));
-    m_UdpSocket_receiver.bind(QHostAddress::LocalHost,8889);
+    qDebug()<<"surface init thread is:"<<QThread::currentThread();
+    connect(m_UdpSocket_receiver,SIGNAL(readyRead()),this,SLOT(readPendingDatagrams()));
+    m_UdpSocket_receiver->bind(QHostAddress::LocalHost,8889);
 }
 
 void SurfaceCommunication::slot_doWork()
 {
+     qDebug()<<"surface slot_dowork thread is:"<<QThread::currentThread();
     //send data to surface
     QByteArray ba("0xaa 0x55");
     if(m_SICKdata.size()==181)
@@ -27,7 +31,7 @@ void SurfaceCommunication::slot_doWork()
         ba = ba + " " + "0xFF";
     }
     //qDebug()<<"SurfaceComm slot_doWork:data:"<<ba;
-    m_UdpSocket_sender.writeDatagram(ba,ba.size(),m_hostAddr,6665);
+    m_UdpSocket_sender->writeDatagram(ba,ba.size(),m_hostAddr,6665);
 }
 
 void SurfaceCommunication::slot_on_SICKdataUpdate(QVector<int> vec)
@@ -50,10 +54,10 @@ void SurfaceCommunication::slot_on_mainwindowUpdate(QVector<int> vec)
 void SurfaceCommunication::readPendingDatagrams()
 {
      QByteArray datagram;
-    while(m_UdpSocket_receiver.hasPendingDatagrams())
+    while(m_UdpSocket_receiver->hasPendingDatagrams())
     {
-        datagram.resize(m_UdpSocket_receiver.pendingDatagramSize());
-        m_UdpSocket_receiver.readDatagram(datagram.data(),datagram.size());
+        datagram.resize(m_UdpSocket_receiver->pendingDatagramSize());
+        m_UdpSocket_receiver->readDatagram(datagram.data(),datagram.size());
     }
     qDebug()<<"Surface received datagrams are:"<<datagram;
 }

@@ -10,6 +10,26 @@ class SurfaceCommunication : public QObject
 public:
     explicit SurfaceCommunication(QObject *parent = 0);
     void init();
+    QUdpSocket* getUdpSender()
+    {
+        return m_UdpSocket_sender;
+    }
+
+    QUdpSocket* getUdpReceiver()
+    {
+        return m_UdpSocket_receiver;
+    }
+
+    void setUdpSender(QUdpSocket *p)
+    {
+        m_UdpSocket_sender = p;
+    }
+
+    void setUdpReceiver(QUdpSocket *p)
+    {
+        m_UdpSocket_receiver = p;
+    }
+
 private:
 signals:
 
@@ -20,8 +40,8 @@ public slots:
 private slots:
     void readPendingDatagrams();
 private:
-    QUdpSocket m_UdpSocket_sender;
-    QUdpSocket m_UdpSocket_receiver;
+    QUdpSocket *m_UdpSocket_sender;
+    QUdpSocket *m_UdpSocket_receiver;
     QHostAddress m_hostAddr;
     QVector<int> m_SICKdata;
     QVector<int> m_mainwindowData;

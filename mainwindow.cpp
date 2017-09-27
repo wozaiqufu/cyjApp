@@ -74,10 +74,16 @@ void MainWindow::slot_on_initCAN()
 
 void MainWindow::slot_on_initSurface()
 {
+    qDebug()<<"mainwindow thread is:"<<QThread::currentThread();
+
     m_surfaceComm.moveToThread(&m_thread_Surface);
-    m_surfaceComm.init();//UDP objects must be created in the same thread of surfaceComm
+    m_udp_receiver.moveToThread(&m_thread_Surface);
+    m_udp_sender.moveToThread(&m_thread_Surface);
+    m_surfaceComm.setUdpReceiver(&m_udp_receiver);
+    m_surfaceComm.setUdpSender(&m_udp_sender);
     m_timer_surface.setInterval(2000);
     m_timer_surface.moveToThread(&m_thread_Surface);
+    m_surfaceComm.init();//UDP objects must be created in the same thread of surfaceComm
     connect(&m_thread_Surface,SIGNAL(started()),&m_timer_surface,SLOT(start()));
     connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
     connect(this,SIGNAL(sig_informInfo2surface(QVector<int>)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(QVector<int>)));

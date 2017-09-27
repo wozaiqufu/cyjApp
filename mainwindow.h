@@ -54,6 +54,8 @@ private:
     QTimer m_timer_surface;
     QVector<int> m_vector_CAN304;
     QVector<int> m_vector_CAN305;
+    QUdpSocket m_udp_sender;
+    QUdpSocket m_udp_receiver;
     int m_velocity;
     int m_engineSpeed;
     int m_gear;
