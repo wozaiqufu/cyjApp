@@ -19,8 +19,9 @@ public slots:
     void slot_on_mainwindowUpdate(QVector<int> vec);
     void readPendingDatagrams();
 private:
+    qint16 m_port;
+    QUdpSocket m_UdpSocket;
     QUdpSocket m_UdpSocket_sender;
-    QUdpSocket m_UdpSocket_receiver;
     QHostAddress m_hostAddr;
     QVector<int> m_SICKdata;
     QVector<int> m_mainwindowData;
