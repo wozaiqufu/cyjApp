@@ -13,8 +13,9 @@ void SurfaceCommunication::init()
 //    m_pUdpSocket_receiver = new QUdpSocket();
 //    m_pUdpSocket_sender = new QUdpSocket();
     qDebug()<<"surface init thread is:"<<QThread::currentThread();
-    connect(m_UdpSocket_receiver,SIGNAL(readyRead()),this,SLOT(readPendingDatagrams()));
-    m_UdpSocket_receiver->bind(QHostAddress::LocalHost,8889);
+    connect(&m_UdpSocket_receiver,SIGNAL(readyRead()),this,SLOT(readPendingDatagrams()));
+    m_UdpSocket_receiver.bind(QHostAddress::LocalHost,8889);
+    //m_UdpSocket_receiver.bind(m_hostAddr,6665);
 }
 
 void SurfaceCommunication::slot_doWork()
@@ -31,7 +32,7 @@ void SurfaceCommunication::slot_doWork()
         ba = ba + " " + "0xFF";
     }
     //qDebug()<<"SurfaceComm slot_doWork:data:"<<ba;
-    m_UdpSocket_sender->writeDatagram(ba,ba.size(),m_hostAddr,6665);
+    m_UdpSocket_sender.writeDatagram(ba,ba.size(),m_hostAddr,6665);
 }
 
 void SurfaceCommunication::slot_on_SICKdataUpdate(QVector<int> vec)
@@ -54,10 +55,10 @@ void SurfaceCommunication::slot_on_mainwindowUpdate(QVector<int> vec)
 void SurfaceCommunication::readPendingDatagrams()
 {
      QByteArray datagram;
-    while(m_UdpSocket_receiver->hasPendingDatagrams())
+    while(m_UdpSocket_receiver.hasPendingDatagrams())
     {
-        datagram.resize(m_UdpSocket_receiver->pendingDatagramSize());
-        m_UdpSocket_receiver->readDatagram(datagram.data(),datagram.size());
+        datagram.resize(m_UdpSocket_receiver.pendingDatagramSize());
+        m_UdpSocket_receiver.readDatagram(datagram.data(),datagram.size());
     }
     qDebug()<<"Surface received datagrams are:"<<datagram;
 }
