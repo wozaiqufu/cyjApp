@@ -5,14 +5,17 @@ CANobj::CANobj(QObject *parent) : QObject(parent)
   ,m_s(0) {
 }
 
-bool CANobj::initCAN(const int portIndex){
+bool CANobj::initCAN(const int portIndex)
+{
     int ret;
-    if(0 == portIndex) {//CAN0 is used!
+    if(0 == portIndex)
+    {//CAN0 is used!
    /*********************step 1*******************************************************************/
         //create the CAN Socket
         srand(time(NULL));
         m_s = socket(PF_CAN,SOCK_RAW,CAN_RAW);
-        if(m_s<0) {
+        if(m_s<0)
+        {
             qDebug()<<"CAN initialization failed!";
             return false;
         }
@@ -23,14 +26,16 @@ bool CANobj::initCAN(const int portIndex){
     strcpy(m_ifr.ifr_name,"can0");
     qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
     ret = ioctl(m_s,SIOCGIFINDEX,&m_ifr);
-    if(ret<0) {
+    if(ret<0)
+    {
         qDebug()<<"ioctl failed!";
         return false;
     }
     m_addr.can_family = PF_CAN;
     m_addr.can_ifindex = m_ifr.ifr_ifindex;
     ret = bind(m_s,(struct sockaddr*)&m_addr,sizeof(m_addr));
-    if(ret<0) {
+    if(ret<0)
+    {
         qDebug()<<"bind failed!";
         return false;
     }
@@ -77,9 +82,9 @@ void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
     }
 }
 
-void CANobj::slot_on_timeout()
+void CANobj::slot_dowork()
 {
-    //qDebug()<<"slot_on_timeout";
+    qDebug()<<"CAN slot_dowork";
     m_tv.tv_sec = 1;
     m_tv.tv_usec = 0;
     FD_ZERO(&m_rset);
@@ -111,7 +116,7 @@ void CANobj::slot_on_timeout()
     }
     emit sigUpdateCAN304(m_CAN304);
     emit sigUpdateCAN305(m_CAN305);
-    //printFrame(&m_frameRecv);
+    printFrame(&m_frameRecv);
 }
 
 void CANobj::printFrame(can_frame *frame)

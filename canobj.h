@@ -43,7 +43,7 @@ signals:
 public slots:
     void slot_on_receiveFrame();
     void slot_on_sendFrame(ulong id, uchar length, uchar *data);
-    void  slot_on_timeout();//timer to refresh data
+    void  slot_dowork();//timer to refresh data
 private:
     void printFrame(struct can_frame* frame);
 private:

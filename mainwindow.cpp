@@ -24,7 +24,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
     connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
-    connect(ui->pushButton_7,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
+    connect(ui->pushButton_light1,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
+    connect(ui->pushButton_light2,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame2()));
+    connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
    m_timer_main.start(100);
@@ -62,12 +64,12 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
 void MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
-    m_timer_CAN.setInterval(50);
+    m_timer_CAN.setInterval(500);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
     connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
     connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
-    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_on_timeout()));
+    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
 }
@@ -81,23 +83,59 @@ void MainWindow::slot_on_initSurface()
 
 void MainWindow::slot_on_readFrame()
 {
-    qDebug()<<"slot_on_readFrame";
     m_thread_CAN.start();
-
-    //m_can.slot_on_receiveFrame();
 }
 //only for test
 void MainWindow::slot_on_sendFrame()
 {
+//    uchar data[8] = {0,0,0,0,0,0,0,0};
+//    data[0] = 0x60;
+//    data[1] = 0x00;
+//    data[2] = 0x00;
+//    data[3] = 0x00;
+//    data[4] = 0x00;
+//    data[5] = 0x00;
+//    data[6] = 0x00;
+//    data[7] = 8;
+//    m_can.slot_on_sendFrame(0x0161,8,data);
+
     uchar data[8] = {0,0,0,0,0,0,0,0};
-    data[0] = 10;
-    data[1] = 8;
-    data[2] = 10;
-    data[3] = 8;
-    data[4] = 10;
-    data[5] = 8;
-    data[6] = 10;
-    data[7] = 8;
+    data[0] = 32;
+    data[1] = 0;
+    data[2] = 0;
+    data[3] = 0;
+    data[4] = 0;
+    data[5] = 0;
+    data[6] = 0;
+    data[7] = 0;
+    m_can.slot_on_sendFrame(0x0161,8,data);
+}
+
+void MainWindow::slot_on_sendFrame2()
+{
+    uchar data[8] = {0,0,0,0,0,0,0,0};
+    data[0] = 64;
+    data[1] = 0;
+    data[2] = 0;
+    data[3] = 0;
+    data[4] = 0;
+    data[5] = 0;
+    data[6] = 0;
+    data[7] = 0;
+    m_can.slot_on_sendFrame(0x0161,8,data);
+}
+
+void MainWindow::slot_on_sendFrame3()
+{
+    uchar data[8] = {0,0,0,0,0,0,0,0};
+    data[0] = 96;
+    data[1] = 0;
+    data[2] = 0;
+    data[3] = 0;
+    data[4] = 0;
+    data[5] = 0;
+    data[6] = 0;
+    data[7] = 0;
     m_can.slot_on_sendFrame(0x0161,8,data);
 }
 

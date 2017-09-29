@@ -33,6 +33,8 @@ private slots:
     void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
+    void slot_on_sendFrame2();
+    void slot_on_sendFrame3();
     void slot_on_initSurface();
     void slot_on_mainTimer_timeout();
 public slots:
