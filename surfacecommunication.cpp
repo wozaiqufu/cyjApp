@@ -6,7 +6,6 @@ SurfaceCommunication::SurfaceCommunication(QObject *parent) : QObject(parent),
     m_hostAddr("192.168.1.100")//surface ip
   ,m_port(8889)
 {
-    qDebug()<<"surface construction current thread is:"<<QThread::currentThread();
 }
 
 void SurfaceCommunication::init()

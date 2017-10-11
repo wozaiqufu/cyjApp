@@ -41,11 +41,11 @@ signals:
     void sigUpdateCAN304(QVector<int>);
     void sigUpdateCAN305(QVector<int>);
 public slots:
-    void slot_on_receiveFrame();
-    void slot_on_sendFrame(ulong id, uchar length, uchar *data);
+    void slot_on_sendFrame(ulong id, uchar length, uchar *data);//send control cammond
     void  slot_dowork();//timer to refresh data
 private:
     void printFrame(struct can_frame* frame);
+    void handle_err_frame(const struct can_frame *fr);
 private:
     int m_s;
     struct ifreq m_ifr;

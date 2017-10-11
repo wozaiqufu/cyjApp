@@ -52,30 +52,13 @@ bool CANobj::initCAN(const int portIndex)
     }
 }
 
-void CANobj::slot_on_receiveFrame()
-{
-    m_tv.tv_sec = 1;
-    m_tv.tv_usec = 0;
-    FD_ZERO(&m_rset);
-    FD_SET(m_s,&m_rset);
-    int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
-    if(0 == ret) {
-        qDebug()<<"select timeout!";
-    }
-    ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
-    if(0 == ret) {
-        qDebug()<<"sead failed!";
-    }
-    printFrame(&m_frameRecv);
-}
-
 void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
     m_frameSend.can_id   =   id;
     m_frameSend.can_dlc =   length;
     for(uchar i=0; i < length; i++)
     m_frameSend.data[i] = data[i];
-    printFrame(&m_frameSend);
+    //printFrame(&m_frameSend);
     int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
     if (nbytes < 0) {
         qDebug()<<"Send message error senddata\n";
@@ -92,10 +75,19 @@ void CANobj::slot_dowork()
     int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
     if(0 == ret) {
         qDebug()<<"select timeout!";
+        return;
     }
     ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
-    if(0 == ret) {
-        qDebug()<<"sead failed!";
+    if(ret < sizeof(m_frameRecv))
+    {
+        qDebug()<<"read failed!";
+        return;
+    }
+    if(m_frameRecv.can_id & CAN_ERR_FLAG)
+    {
+        handle_err_frame(&m_frameRecv);
+        qDebug()<<"CAN Device error!";
+        return;
     }
     m_CAN304.clear();
     m_CAN305.clear();
@@ -130,5 +122,55 @@ void CANobj::printFrame(can_frame *frame)
         //printf("%02x",frame->data[i]);
         qDebug()<<frame->data[i];
     }
+}
+
+void CANobj::handle_err_frame(const can_frame *fr)
+{
+    if(fr->can_id & CAN_ERR_TX_TIMEOUT)
+    {
+        qDebug()<<"CAN_ERR_TX_TIMEOUT";
+    }
+    if(fr->can_id & CAN_ERR_LOSTARB)
+    {
+        qDebug()<<"CAN_ERR_LOSTARB";
+        qDebug()<<fr->data[1];
+    }
+
+    if(fr->can_id & CAN_ERR_CRTL)
+    {
+        qDebug()<<"CAN_ERR_CRTL";
+        qDebug()<<fr->data[1];
+    }
+
+    if(fr->can_id & CAN_ERR_PROT)
+    {
+        qDebug()<<"CAN_ERR_PROT";
+        qDebug()<<fr->data[2];
+        qDebug()<<fr->data[3];
+    }
+
+    if(fr->can_id & CAN_ERR_TRX)
+    {
+        qDebug()<<"CAN_ERR_TRX";
+        qDebug()<<fr->data[4];
+    }
+
+    if(fr->can_id & CAN_ERR_BUSOFF)
+    {
+        qDebug()<<"CAN_ERR_BUSOFF";
+    }
+
+    if(fr->can_id & CAN_ERR_BUSERROR)
+    {
+        qDebug()<<"CAN_ERR_BUSERROR";
+    }
+
+    if(fr->can_id & CAN_ERR_RESTARTED)
+    {
+        qDebug()<<"CAN_ERR_RESTARTED";
+    }
+
+
+
 }
 
