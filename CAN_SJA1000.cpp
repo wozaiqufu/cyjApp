@@ -91,8 +91,7 @@ void CAN_8900::read_message(void)
        {
          printf("nbytes  receive = %d\n", nbytes);
          perror("Receive message error \n");
-         qDebug()<<"nbytes receive: "<<nbytes;
-         qDebug()
+         //qDebug()<<"nbytes receive: "<<nbytes;
         }
         else
         {

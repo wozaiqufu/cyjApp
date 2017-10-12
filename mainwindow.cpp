@@ -12,10 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
   m_courseAngle(0),
   m_spliceAngle(0),
   m_lateralOffset(0),
-  m_vehicleControlMode(1),
   m_command_accelerator(0),
   m_command_angle(0),
-  m_aa(0),
   m_direction(Forward)
 {
     ui->setupUi(this);
@@ -64,7 +62,7 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
 void MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
-    m_timer_CAN.setInterval(500);
+    m_timer_CAN.setInterval(5);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
     connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
@@ -72,12 +70,9 @@ void MainWindow::slot_on_initCAN()
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
-<<<<<<< HEAD
     //for test only
     _CANReady = true;
      //_can8900.CAN_Init(0);
-=======
->>>>>>> parent of a09722e... delete slot_on_receiveFrame
 }
 
 void MainWindow::slot_on_initSurface()
@@ -182,18 +177,18 @@ void MainWindow::slot_on_mainTimer_timeout()
     ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
     ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_gear));
-    switch (m_vehicleControlMode)
+    switch (m_controlMode)
     {
-    case 1:
+    case Local:
          ui->label_controlMode->setText("Local");
         break;
-    case 2:
+    case Visible:
          ui->label_controlMode->setText("Visible");
         break;
-    case 3:
+    case Remote:
          ui->label_controlMode->setText("Remote");
         break;
-    case 4:
+    case Auto:
          ui->label_controlMode->setText("Auto");
         break;
     default:

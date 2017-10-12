@@ -52,23 +52,6 @@ bool CANobj::initCAN(const int portIndex)
     }
 }
 
-void CANobj::slot_on_receiveFrame()
-{
-    m_tv.tv_sec = 1;
-    m_tv.tv_usec = 0;
-    FD_ZERO(&m_rset);
-    FD_SET(m_s,&m_rset);
-    int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
-    if(0 == ret) {
-        qDebug()<<"select timeout!";
-    }
-    ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
-    if(0 == ret) {
-        qDebug()<<"sead failed!";
-    }
-    printFrame(&m_frameRecv);
-}
-
 void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
     m_frameSend.can_id   =   id;
@@ -84,7 +67,6 @@ void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 
 void CANobj::slot_dowork()
 {
-    qDebug()<<"CAN slot_dowork";
     m_tv.tv_sec = 1;
     m_tv.tv_usec = 0;
     FD_ZERO(&m_rset);
@@ -116,7 +98,7 @@ void CANobj::slot_dowork()
     }
     emit sigUpdateCAN304(m_CAN304);
     emit sigUpdateCAN305(m_CAN305);
-    printFrame(&m_frameRecv);
+    //printFrame(&m_frameRecv);
 }
 
 void CANobj::printFrame(can_frame *frame)
@@ -132,7 +114,6 @@ void CANobj::printFrame(can_frame *frame)
     }
 }
 
-<<<<<<< HEAD
 void CANobj::handle_err_frame(const can_frame *fr)
 {
     if(fr->can_id & CAN_ERR_TX_TIMEOUT)
@@ -180,5 +161,3 @@ void CANobj::handle_err_frame(const can_frame *fr)
     }
 }
 
-=======
->>>>>>> parent of a09722e... delete slot_on_receiveFrame
