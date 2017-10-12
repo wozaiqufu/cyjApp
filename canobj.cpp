@@ -21,9 +21,9 @@ bool CANobj::initCAN(const int portIndex)
         }
 
     /*********************step 2*******************************************************************/
-            //bind socket to specific CAN port
-     //strcpy(ifr.ifr_name, "can0");
-    strcpy(m_ifr.ifr_name,"can0");
+    //bind socket to specific CAN port
+    //strcpy(m_ifr.ifr_name,"can0");
+    strcpy(m_ifr.ifr_name,"can1");
     qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
     ret = ioctl(m_s,SIOCGIFINDEX,&m_ifr);
     if(ret<0)
@@ -52,13 +52,30 @@ bool CANobj::initCAN(const int portIndex)
     }
 }
 
+void CANobj::slot_on_receiveFrame()
+{
+    m_tv.tv_sec = 1;
+    m_tv.tv_usec = 0;
+    FD_ZERO(&m_rset);
+    FD_SET(m_s,&m_rset);
+    int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
+    if(0 == ret) {
+        qDebug()<<"select timeout!";
+    }
+    ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
+    if(0 == ret) {
+        qDebug()<<"sead failed!";
+    }
+    printFrame(&m_frameRecv);
+}
+
 void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
     m_frameSend.can_id   =   id;
     m_frameSend.can_dlc =   length;
     for(uchar i=0; i < length; i++)
     m_frameSend.data[i] = data[i];
-    //printFrame(&m_frameSend);
+    printFrame(&m_frameSend);
     int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
     if (nbytes < 0) {
         qDebug()<<"Send message error senddata\n";
@@ -75,19 +92,10 @@ void CANobj::slot_dowork()
     int ret = select(m_s+1,&m_rset,NULL,NULL,NULL);
     if(0 == ret) {
         qDebug()<<"select timeout!";
-        return;
     }
     ret = read(m_s,&m_frameRecv,sizeof(m_frameRecv));
-    if(ret < sizeof(m_frameRecv))
-    {
-        qDebug()<<"read failed!";
-        return;
-    }
-    if(m_frameRecv.can_id & CAN_ERR_FLAG)
-    {
-        handle_err_frame(&m_frameRecv);
-        qDebug()<<"CAN Device error!";
-        return;
+    if(0 == ret) {
+        qDebug()<<"sead failed!";
     }
     m_CAN304.clear();
     m_CAN305.clear();
@@ -124,6 +132,7 @@ void CANobj::printFrame(can_frame *frame)
     }
 }
 
+<<<<<<< HEAD
 void CANobj::handle_err_frame(const can_frame *fr)
 {
     if(fr->can_id & CAN_ERR_TX_TIMEOUT)
@@ -169,8 +178,7 @@ void CANobj::handle_err_frame(const can_frame *fr)
     {
         qDebug()<<"CAN_ERR_RESTARTED";
     }
-
-
-
 }
 
+=======
+>>>>>>> parent of a09722e... delete slot_on_receiveFrame

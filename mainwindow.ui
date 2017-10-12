@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>742</width>
-    <height>385</height>
+    <height>470</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -109,24 +109,17 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QPushButton" name="pushButton_5">
-        <property name="text">
-         <string>init CAN</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
+      <item row="2" column="0" colspan="3">
        <widget class="QPushButton" name="pushButton_6">
         <property name="text">
          <string>read data</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="label_CANTimer">
+      <item row="0" column="0" colspan="3">
+       <widget class="QPushButton" name="pushButton_5">
         <property name="text">
-         <string>TextLabel</string>
+         <string>init CAN</string>
         </property>
        </widget>
       </item>
@@ -308,6 +301,32 @@
       </item>
      </layout>
     </widget>
+   </widget>
+   <widget class="QWidget" name="gridLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>320</y>
+      <width>521</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_5">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_CAN305">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_CAN304">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">

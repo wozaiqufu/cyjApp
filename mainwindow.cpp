@@ -12,12 +12,11 @@ MainWindow::MainWindow(QWidget *parent) :
   m_courseAngle(0),
   m_spliceAngle(0),
   m_lateralOffset(0),
+  m_vehicleControlMode(1),
   m_command_accelerator(0),
   m_command_angle(0),
-  m_controlMode(Local),
-  m_direction(Forward),
-  _light(0),
-  _CANReady(false)
+  m_aa(0),
+  m_direction(Forward)
 {
     ui->setupUi(this);
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
@@ -30,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-   m_timer_main.start(1000);
+   m_timer_main.start(100);
 }
 
 MainWindow::~MainWindow()
@@ -68,16 +67,17 @@ void MainWindow::slot_on_initCAN()
     m_timer_CAN.setInterval(500);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    connect(this,SIGNAL(sig_CAN(ulong,uchar,uchar*)),&m_can,SLOT(slot_on_sendFrame(ulong,uchar,uchar*)));
     connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
     connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
-
-
+<<<<<<< HEAD
     //for test only
     _CANReady = true;
+     //_can8900.CAN_Init(0);
+=======
+>>>>>>> parent of a09722e... delete slot_on_receiveFrame
 }
 
 void MainWindow::slot_on_initSurface()
@@ -90,6 +90,7 @@ void MainWindow::slot_on_initSurface()
 void MainWindow::slot_on_readFrame()
 {
     m_thread_CAN.start();
+    //_can8900.read_message();
 }
 //only for test
 void MainWindow::slot_on_sendFrame()
@@ -114,8 +115,7 @@ void MainWindow::slot_on_sendFrame()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    //m_can.slot_on_sendFrame(0x0161,8,data);
-    emit sig_CAN(0x0161,8,data);
+    m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame2()
@@ -129,8 +129,7 @@ void MainWindow::slot_on_sendFrame2()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-   // m_can.slot_on_sendFrame(0x0161,8,data);
-    emit sig_CAN(0x0161,8,data);
+    m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame3()
@@ -144,9 +143,10 @@ void MainWindow::slot_on_sendFrame3()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    //m_can.slot_on_sendFrame(0x0161,8,data);
-    emit sig_CAN(0x0161,8,data);
+    m_can.slot_on_sendFrame(0x0161,8,data);
 }
+
+
 
 void MainWindow::slot_on_mainTimer_timeout()
 {
@@ -174,15 +174,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     emit sig_informDirection(Forward);
     //if(send backward)
     //emit sig_informDirection(Backward);
-    //timer info
-    if(m_timer_CAN.isActive())
-    {
-        ui->label_CANTimer->setText("Timer ON");
-    }
-    else
-    {
-        ui->label_CANTimer->setText("Timer OFF");
-    }
+
     //update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
     ui->label_velocity->setText(QString::number(m_velocity));
@@ -190,18 +182,18 @@ void MainWindow::slot_on_mainTimer_timeout()
     ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
     ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_gear));
-    switch (m_controlMode)
+    switch (m_vehicleControlMode)
     {
-    case Local:
+    case 1:
          ui->label_controlMode->setText("Local");
         break;
-    case Visible:
+    case 2:
          ui->label_controlMode->setText("Visible");
         break;
-    case Remote:
+    case 3:
          ui->label_controlMode->setText("Remote");
         break;
-    case Auto:
+    case 4:
          ui->label_controlMode->setText("Auto");
         break;
     default:
@@ -216,32 +208,12 @@ void MainWindow::slot_on_mainTimer_timeout()
     {
         ui->label_direction->setText("Backward");
     }
-
-//    if(_CANReady)
-//    {
-//        switch (_light)
-//        {
-//        case 0:
-//            slot_on_sendFrame();
-//            _light = 1;
-//            break;
-//        case 1:
-//            slot_on_sendFrame2();
-//            _light = 2;
-//            break;
-//        case 2:
-//            slot_on_sendFrame3();
-//            _light = 0;
-//            break;
-//        default:
-//            break;
-//        }
-//    }
 }
 
 void MainWindow::slot_on_updateCourseAngle(int angle)
 {
     m_courseAngle = angle;
+
 }
 
 void MainWindow::slot_on_updateLateralOffset(int offset)
@@ -256,8 +228,13 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
         return;
     }
     m_vector_CAN304 = vec;
-    qDebug()<<"CAN304 data are:"<<m_vector_CAN304;
-
+    //qDebug()<<"CAN304 data are:"<<m_vector_CAN304;
+    QString str;
+    for(int i=0;i<m_vector_CAN304.size();i++)
+    {
+        str = QString::number(m_vector_CAN304[i]) + " ";
+    }
+    ui->label_CAN304->setText(str);
 }
 
 void MainWindow::slot_on_updateCAN305(QVector<int> vec)
@@ -267,7 +244,14 @@ void MainWindow::slot_on_updateCAN305(QVector<int> vec)
         return;
     }
     m_vector_CAN305 = vec;
-    qDebug()<<"CAN305 data are:"<<m_vector_CAN305;
+   // qDebug()<<"CAN305 data are:"<<m_vector_CAN305;
+    QString str;
+    for(int i=0;i<m_vector_CAN305.size();i++)
+    {
+        str = QString::number(m_vector_CAN305[i]) + " ";
+    }
+    ui->label_CAN305->setText(str);
+
     //extract splice angle
     if(m_vector_CAN305.at(4) == 0)
     {
