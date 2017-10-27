@@ -25,7 +25,7 @@ NetAccess_SICK::~NetAccess_SICK()
 
 }
 
-void NetAccess_SICK::extractData()
+void NetAccess_SICK::extractDISTData()
 {
     /***********************forward************************************/
     if(m_dataRecieved_forward.isEmpty()){
@@ -56,7 +56,7 @@ void NetAccess_SICK::extractData()
     int data_index = m_dataRecieved_forward.indexOf(" ",NumberData_Begin) +1;
      //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
     //crop data begins
-     m_data_forward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
+     m_DISTdata_forward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
      for(int i=0;i<m_numberDataOneSocket;i++)
      {
          QByteArray iData = m_dataRecieved_forward.mid(data_index,m_dataRecieved_forward.indexOf(" ",data_index)-data_index);
@@ -65,13 +65,13 @@ void NetAccess_SICK::extractData()
          //if 40000000,returned data*2 is the real value in decimal
          iData_Dec = 2*iData_Dec;
          if(ok){
-             m_data_forward.push_back(iData_Dec);
+             m_DISTdata_forward.push_back(iData_Dec);
              //qDebug()<<"the "<<i<<" th data is: "<<iData_Dec;
          }
          data_index = m_dataRecieved_forward.indexOf(" ",data_index) + 1;
      }
      //signal to surface obj
-     emit sigUpdateData(m_data_forward);
+     emit sigUpdateDIST(m_DISTdata_forward);
      //qDebug()<<"\n"<<"m_data_forward in decimal:"<<m_data_forward;
      //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
 
@@ -103,18 +103,113 @@ void NetAccess_SICK::extractData()
      data_index = m_dataRecieved_backward.indexOf(" ",NumberData_Begin) +1;
       //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
      //crop data begins
-      m_data_backward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
+      m_DISTdata_backward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
       for(int i=0;i<m_numberDataOneSocket;i++)
       {
           QByteArray iData = m_dataRecieved_backward.mid(data_index,m_dataRecieved_backward.indexOf(" ",data_index)-data_index);
           bool ok;
           int iData_Dec = iData.toInt(&ok,16);
           if(ok){
-              m_data_backward.push_back(iData_Dec);
+              m_DISTdata_backward.push_back(iData_Dec);
               //qDebug()<<"the "<<i<<" th data is: "<<iData_Dec;
           }
           data_index = m_dataRecieved_backward.indexOf(" ",data_index) + 1;
       }
+      emit sigUpdateDIST(m_DISTdata_backward);
+      //qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
+}
+
+void NetAccess_SICK::extractRSSIData()
+{
+    /***********************forward************************************/
+    if(m_dataRecieved_forward.isEmpty()){
+        return;
+    }
+    //if using the permanent mode,the first diagram is the confirmation,not the DATA
+    if(!m_dataRecieved_forward.contains("00000000")){
+        return;
+    }
+    QString eightZeros("00000000");
+    int zerosStartPos = m_dataRecieved_forward.lastIndexOf(eightZeros);
+    zerosStartPos = zerosStartPos + 9;//index of Starting Angle
+    //crop Starting Angle
+    int startAngle_End = m_dataRecieved_forward.indexOf(" ",zerosStartPos);
+    QByteArray startAngle = m_dataRecieved_forward.mid(zerosStartPos,startAngle_End-zerosStartPos);
+    //qDebug()<<"startAngle:"<<startAngle;
+    //crop Angular step width
+    int AngularStep_Begin = startAngle_End + 1;
+    QByteArray angularStep = m_dataRecieved_forward.mid(AngularStep_Begin,m_dataRecieved_forward.indexOf(" ",AngularStep_Begin)-AngularStep_Begin);
+    //qDebug()<<"angular step:"<<angularStep;
+    //crop Number Data
+    int NumberData_Begin = m_dataRecieved_forward.indexOf(" ",AngularStep_Begin) + 1;
+    QByteArray numberData = m_dataRecieved_forward.mid(NumberData_Begin,m_dataRecieved_forward.indexOf(" ",NumberData_Begin)-NumberData_Begin);
+    //qDebug()<<"number data in Hex:"<<numberData;
+    //crop Data:in order to completely crop data,we need to transform Hex to Decimal
+    bool ok;
+    m_numberDataOneSocket = numberData.toInt(&ok,16);
+    int data_index = m_dataRecieved_forward.indexOf(" ",NumberData_Begin) +1;
+     //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
+    //crop data begins
+     m_RSSIdata_forward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
+     for(int i=0;i<m_numberDataOneSocket;i++)
+     {
+         QByteArray iData = m_dataRecieved_forward.mid(data_index,m_dataRecieved_forward.indexOf(" ",data_index)-data_index);
+         bool ok;
+         int iData_Dec = iData.toInt(&ok,16);
+         //if 40000000,returned data*2 is the real value in decimal
+        // iData_Dec = 2*iData_Dec;
+         if(ok){
+             m_RSSIdata_forward.push_back(iData_Dec);
+             //qDebug()<<"the "<<i<<" th data is: "<<iData_Dec;
+         }
+         data_index = m_dataRecieved_forward.indexOf(" ",data_index) + 1;
+     }
+     //signal to surface obj
+     emit sigUpdataRSSI(m_RSSIdata_forward);
+     //qDebug()<<"\n"<<"m_RSSIdata_forward in decimal:"<<m_RSSIdata_forward;
+     //qDebug()<<"size of m_RSSIdata_forward:"<<m_RSSIdata_forward.size();
+
+     /***********************backward************************************/
+     if(m_dataRecieved_backward.isEmpty()){
+         //qDebug()<<"m_dataRecieved_backward is empty";
+         return;
+     }
+     //if using the permanent mode,the first diagram is the confirmation,not the DATA
+     if(!m_dataRecieved_backward.contains("00000000")){
+         return;
+     }
+     zerosStartPos = m_dataRecieved_backward.lastIndexOf(eightZeros);
+     zerosStartPos = zerosStartPos + 9;//index of Starting Angle
+     //crop Starting Angle
+     startAngle_End = m_dataRecieved_backward.indexOf(" ",zerosStartPos);
+     startAngle = m_dataRecieved_backward.mid(zerosStartPos,startAngle_End-zerosStartPos);
+     //qDebug()<<"startAngle:"<<startAngle;
+     //crop Angular step width
+     AngularStep_Begin = startAngle_End + 1;
+     angularStep = m_dataRecieved_backward.mid(AngularStep_Begin,m_dataRecieved_backward.indexOf(" ",AngularStep_Begin)-AngularStep_Begin);
+     //qDebug()<<"angular step:"<<angularStep;
+     //crop Number Data
+     NumberData_Begin = m_dataRecieved_backward.indexOf(" ",AngularStep_Begin) + 1;
+     numberData = m_dataRecieved_backward.mid(NumberData_Begin,m_dataRecieved_forward.indexOf(" ",NumberData_Begin)-NumberData_Begin);
+     //qDebug()<<"number data in Hex:"<<numberData;
+     //crop Data:in order to completely crop data,we need to transform Hex to Decimal
+     m_numberDataOneSocket = numberData.toInt(&ok,16);
+     data_index = m_dataRecieved_backward.indexOf(" ",NumberData_Begin) +1;
+      //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
+     //crop data begins
+      m_RSSIdata_backward.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
+      for(int i=0;i<m_numberDataOneSocket;i++)
+      {
+          QByteArray iData = m_dataRecieved_backward.mid(data_index,m_dataRecieved_backward.indexOf(" ",data_index)-data_index);
+          bool ok;
+          int iData_Dec = iData.toInt(&ok,16);
+          if(ok){
+              m_RSSIdata_backward.push_back(iData_Dec);
+              //qDebug()<<"the "<<i<<" th data is: "<<iData_Dec;
+          }
+          data_index = m_dataRecieved_backward.indexOf(" ",data_index) + 1;
+      }
+      emit sigUpdataRSSI(m_RSSIdata_backward);
       //qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
 }
 
@@ -127,7 +222,7 @@ int NetAccess_SICK::courseAngle()
     int courseAngle_left = 0;
     if(m_currentDirection==Forward)//forward:use forward SICK
     {
-        if(m_data_forward.size()==181)
+        if(m_DISTdata_forward.size()==181)
         {
             //right side
             double sumCourse = 0;
@@ -135,14 +230,14 @@ int NetAccess_SICK::courseAngle()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //l1!=0&&l2!=0
-                if((m_data_forward[m_angleStart+i]==0)||(m_data_forward[m_angleStart+m_anglel1l2+i]==0))
+                if((m_DISTdata_forward[m_angleStart+i]==0)||(m_DISTdata_forward[m_angleStart+m_anglel1l2+i]==0))
                 {
                     continue;
                 }
                 //qDebug()<<"Valid count======:"<<validCount;
                 //beta
-                double l1 = m_data_forward[m_angleStart+i];
-                double l2 = m_data_forward[m_angleStart+m_anglel1l2+i];
+                double l1 = m_DISTdata_forward[m_angleStart+i];
+                double l2 = m_DISTdata_forward[m_angleStart+m_anglel1l2+i];
                 double l3 = sqrt(pow(l1,2)
                         +pow(l2,2)
                         -2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
@@ -170,14 +265,14 @@ int NetAccess_SICK::courseAngle()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //l1!=0&&l2!=0
-                if((m_data_forward[180-m_angleStart-i]==0)||(m_data_forward[180-m_angleStart-m_anglel1l2-i]==0))
+                if((m_DISTdata_forward[180-m_angleStart-i]==0)||(m_DISTdata_forward[180-m_angleStart-m_anglel1l2-i]==0))
                 {
                     continue;
                 }
                 //qDebug()<<"Valid count======:"<<validCount;
                 //beta
-                double l1 = m_data_forward[180-m_angleStart-i];
-                double l2 = m_data_forward[180-m_angleStart-m_anglel1l2-i];
+                double l1 = m_DISTdata_forward[180-m_angleStart-i];
+                double l2 = m_DISTdata_forward[180-m_angleStart-m_anglel1l2-i];
 
                 double l3 = sqrt(pow(l1,2)+pow(l2,2)-2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
                 //qDebug()<<"l1:"<<l1;
@@ -209,7 +304,7 @@ int NetAccess_SICK::courseAngle()
 
     else//backward:use backward SICK
     {
-        if(m_data_backward.size()==181)
+        if(m_DISTdata_backward.size()==181)
         {
             //right side
             double sumCourse = 0;
@@ -217,14 +312,14 @@ int NetAccess_SICK::courseAngle()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //l1!=0&&l2!=0
-                if((m_data_backward[m_angleStart+i]==0)||(m_data_backward[m_angleStart+m_anglel1l2+i]==0))
+                if((m_DISTdata_backward[m_angleStart+i]==0)||(m_DISTdata_backward[m_angleStart+m_anglel1l2+i]==0))
                 {
                     continue;
                 }
                 //qDebug()<<"Valid count======:"<<validCount;
                 //beta
-                double l1 = m_data_backward[m_angleStart+i];
-                double l2 = m_data_backward[m_angleStart+m_anglel1l2+i];
+                double l1 = m_DISTdata_backward[m_angleStart+i];
+                double l2 = m_DISTdata_backward[m_angleStart+m_anglel1l2+i];
                 double l3 = sqrt(pow(l1,2)
                         +pow(l2,2)
                         -2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
@@ -252,14 +347,14 @@ int NetAccess_SICK::courseAngle()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //l1!=0&&l2!=0
-                if((m_data_backward[180-m_angleStart-i]==0)||(m_data_backward[180-m_angleStart-m_anglel1l2-i]==0))
+                if((m_DISTdata_backward[180-m_angleStart-i]==0)||(m_DISTdata_backward[180-m_angleStart-m_anglel1l2-i]==0))
                 {
                     continue;
                 }
                 //qDebug()<<"Valid count======:"<<validCount;
                 //beta
-                double l1 = m_data_backward[180-m_angleStart-i];
-                double l2 = m_data_backward[180-m_angleStart-m_anglel1l2-i];
+                double l1 = m_DISTdata_backward[180-m_angleStart-i];
+                double l2 = m_DISTdata_backward[180-m_angleStart-m_anglel1l2-i];
 
                 double l3 = sqrt(pow(l1,2)+pow(l2,2)-2*l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
                 //qDebug()<<"l1:"<<l1;
@@ -299,7 +394,7 @@ int NetAccess_SICK::lateralOffset()
     int lateral = 1;
     if(m_currentDirection==Forward)//forward:use forward SICK
     {
-        if(m_data_forward.size()==181)
+        if(m_DISTdata_forward.size()==181)
         {
             double sumH1 = 0;
             double sumH2 = 0;
@@ -309,7 +404,7 @@ int NetAccess_SICK::lateralOffset()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //right side h1
-                double l = m_data_forward[i+m_angleStart];
+                double l = m_DISTdata_forward[i+m_angleStart];
                 if(l==0)
                 {
                     continue;
@@ -332,7 +427,7 @@ int NetAccess_SICK::lateralOffset()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //left side h2
-                double l = m_data_forward[180-i-m_angleStart];
+                double l = m_DISTdata_forward[180-i-m_angleStart];
                 if(l==0)
                 {
                     continue;
@@ -354,7 +449,7 @@ int NetAccess_SICK::lateralOffset()
     }
     else//backward:use backward SICK
     {
-        if(m_data_backward.size()==181)
+        if(m_DISTdata_backward.size()==181)
         {
             double sumH1 = 0;
             double sumH2 = 0;
@@ -364,7 +459,7 @@ int NetAccess_SICK::lateralOffset()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //right side h1
-                double l = m_data_backward[i+m_angleStart];
+                double l = m_DISTdata_backward[i+m_angleStart];
                 if(l==0)
                 {
                     continue;
@@ -383,7 +478,7 @@ int NetAccess_SICK::lateralOffset()
             for(int i=0;i<m_angleDeltaMax;i++)
             {
                 //left side h2
-                double l = m_data_backward[180-i-m_angleStart];
+                double l = m_DISTdata_backward[180-i-m_angleStart];
                 if(l==0)
                 {
                     continue;
@@ -438,7 +533,7 @@ bool NetAccess_SICK::connectSensor()
 {
     //qDebug()<<"connectSensor is triggered!";
     if(m_bIsForwardConnected){
-        qDebug()<<" forward tcp client is already connected!";
+        emit sig_statusTable(" forward tcp client is already connected!");
         return false;
     }
     else{
@@ -446,17 +541,17 @@ bool NetAccess_SICK::connectSensor()
         m_tcpSocket_forward.connectToHost(m_address_SICK_forward,m_hostPort_SICK);
         if(m_tcpSocket_forward.waitForConnected(m_milSecondsWait))
         {
-            qDebug()<<"forward socket connected!";
+            emit sig_statusTable("forward socket connected!");
             m_bIsForwardConnected = true;
         }
         else
         {
-            qDebug()<<"connect forward SICK failed!";
+            emit sig_statusTable("connect forward SICK failed!");
         }
     }
 
     if(m_bIsBackwardConnected){
-        qDebug()<<" forward tcp client is already connected!";
+        emit sig_statusTable(" backward tcp client is already connected!");
         return false;
     }
     else{
@@ -464,13 +559,13 @@ bool NetAccess_SICK::connectSensor()
         m_tcpSocket_backward.connectToHost(m_address_SICK_backward,m_hostPort_SICK);
         if(m_tcpSocket_backward.waitForConnected(m_milSecondsWait))
         {
-            qDebug()<<"backward socket connected!";
+            emit sig_statusTable("backward socket connected!");
             m_bIsBackwardConnected = true;
             return true;
         }
         else
         {
-            qDebug()<<"connect backward SICK failed!";
+            emit sig_statusTable("connect backward SICK failed!");
         }
     }
 }
@@ -479,7 +574,7 @@ void NetAccess_SICK::requestSensor(const QString& req)
 {
     if(!m_tcpSocket_forward.isValid())
     {
-        qDebug()<<"unable request forward SICK!";
+        emit sig_statusTable("unable request forward SICK!");
     }
     else
     {
@@ -489,7 +584,7 @@ void NetAccess_SICK::requestSensor(const QString& req)
 
     if(!m_tcpSocket_backward.isValid())
         {
-            qDebug()<<"unable request backward SICK!";
+            emit sig_statusTable("unable request backward SICK!");
         }
         else
         {
@@ -504,7 +599,8 @@ void NetAccess_SICK::slot_on_readMessage_forward(){
     m_dataRecieved_forward = m_tcpSocket_forward.readAll();
     //one data has 2 bytes
     //qDebug()<<"m_dataRecieved:"<<m_dataRecieved<<"at"<<QTime::currentTime();
-    extractData();//vector m_data stores the final 180 data
+    extractDISTData();
+    extractRSSIData();
     emit sigUpdateCourseAngle(courseAngle());
     emit sigUpdateLateralOffset(lateralOffset());
 }
@@ -514,17 +610,20 @@ void NetAccess_SICK::slot_on_readMessage_backward()
     m_dataRecieved_backward = m_tcpSocket_backward.readAll();
     //one data has 2 bytes
     //qDebug()<<"m_dataRecieved:"<<m_dataRecieved<<"at"<<QTime::currentTime();
-    extractData();//vector m_data stores the final 180 data
+    extractDISTData();
+    extractRSSIData();
     emit sigUpdateCourseAngle(courseAngle());
-     emit sigUpdateLateralOffset(lateralOffset());
+    emit sigUpdateLateralOffset(lateralOffset());
 }
 
 void NetAccess_SICK::slot_on_forward_error(QAbstractSocket::SocketError)
 {
-     qDebug()<<"forward error:"<<m_tcpSocket_forward.errorString();
+     emit sig_statusTable("forward error:");
+     qDebug()<<"backward error:"<<m_tcpSocket_forward.errorString();
 }
 
 void NetAccess_SICK::slot_on_backward_error(QAbstractSocket::SocketError)
 {
+    emit sig_statusTable("backward error:");
     qDebug()<<"backward error:"<<m_tcpSocket_backward.errorString();
 }

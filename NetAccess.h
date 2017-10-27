@@ -21,13 +21,16 @@ class NetAccess_SICK : public QObject
 
         ~NetAccess_SICK();
 private:
-        void extractData();
+        void extractDISTData();
+        void extractRSSIData();
         int courseAngle();
         int lateralOffset();
 signals:
     void sigUpdateCourseAngle(int);
     void sigUpdateLateralOffset(int);
-    void sigUpdateData(QVector<int>);
+    void sigUpdateDIST(QVector<int>);
+    void sigUpdataRSSI(QVector<int>);
+    void sig_statusTable(QString);
 public slots:
     void slot_on_requestContinousRead();
     void slot_on_requestContinousRead_Stop();
@@ -46,8 +49,10 @@ private:
     QByteArray m_dataRecieved_backward;
     QTcpSocket m_tcpSocket_forward;
     QTcpSocket m_tcpSocket_backward;
-    QVector<int> m_data_forward;//final data is here!
-    QVector<int> m_data_backward;//final data is here!
+    QVector<int> m_DISTdata_forward;//final data is here!
+    QVector<int> m_RSSIdata_forward;//final RSSI data is here!
+    QVector<int> m_DISTdata_backward;//final data is here!
+    QVector<int> m_RSSIdata_backward;//final RSSI data is here!
     int m_numberDataOneSocket;
     QHostAddress m_address_SICK_forward;
     QHostAddress m_address_SICK_backward;

@@ -16,7 +16,7 @@ bool CANobj::initCAN(const int portIndex)
         m_s = socket(PF_CAN,SOCK_RAW,CAN_RAW);
         if(m_s<0)
         {
-            qDebug()<<"CAN initialization failed!";
+            emit sig_statusTable("CAN initialization failed!");
             return false;
         }
 
@@ -36,10 +36,10 @@ bool CANobj::initCAN(const int portIndex)
     ret = bind(m_s,(struct sockaddr*)&m_addr,sizeof(m_addr));
     if(ret<0)
     {
-        qDebug()<<"bind failed!";
+        emit sig_statusTable("bind failed!");
         return false;
     }
-    qDebug()<<"init CAN succeed!";
+    emit sig_statusTable("init CAN succeed!");
     /*******************setup CAN filters***********************************************************************************/
 //    m_filter[0].can_id = 0x304|CAN_EFF_FLAG;
 //    m_filter[0].can_mask = 0xFFF;
@@ -61,7 +61,7 @@ void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
     printFrame(&m_frameSend);
     int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
     if (nbytes < 0) {
-        qDebug()<<"Send message error senddata\n";
+        emit sig_statusTable("Send message error senddata\n");
     }
 }
 

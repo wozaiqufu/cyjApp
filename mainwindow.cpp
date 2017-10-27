@@ -1,22 +1,46 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMessageBox>
-
+#include <QTime>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-  m_velocity(0),
-  m_engineSpeed(0),
-  m_gear(0),
-  m_courseAngle(0),
-  m_spliceAngle(0),
-  m_lateralOffset(0),
-  m_command_accelerator(0),
-  m_command_angle(0),
-  m_direction(Forward)
+m_isNeutralGear(false),
+m_isBraking(true),
+m_isEmergencyStop(false),
+m_isMainLight(false),
+m_isHorning(false),
+m_controlMode(Local),
+m_isEngineStarted(false),
+m_isEngineswitchMedium(true),
+m_isEarthFault(false),
+m_isIntegratedFault(false),
+m_isOverTemperutureFault(false),
+m_bucketUp(0),
+m_bucketDown(0),
+m_tipingBucket(0),
+m_backBucket(0),
+m_turnLeft(0),
+m_turnRight(0),
+m_accelerator(0),
+m_deaccelerator(0),
+m_velocity(0),
+m_engineSpeed(0),
+m_spliceAngle(0),
+m_oilMass(0),
+m_waterTemperature(0),
+/*************************/
+m_courseAngle(0),
+m_lateralOffset(0),
+m_mileMeterPulse(0),
+m_calibratedMile(0),
+//test only
+_light(0),
+_CANReady(false)
 {
     ui->setupUi(this);
+    initTable();
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
     connect(ui->pushButton_3,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_Permanent()));
     connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
@@ -27,7 +51,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-   m_timer_main.start(100);
+    connect(ui->pushButton_PID,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_PID()));
+    connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_TrackMemory()));
+    connect(ui->pushButton_openFile,SIGNAL(clicked()),this,SLOT(slot_on_openFile()));
+    connect(ui->pushButton_savedata,SIGNAL(clicked()),this,SLOT(slot_on_savedata()));
+    connect(ui->pushButton_readData,SIGNAL(clicked()),this,SLOT(slot_on_loadData()));
+    connect(ui->pushButton_closeFile,SIGNAL(clicked()),this,SLOT(slot_on_closeFile()));
+    m_timer_main.start(100);
+    //signals and slots mainwindow and autoAlgorithm
+    connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
+    //signals and slots SICK and autoAlgorithm
+    connect(&m_sickObj,SIGNAL(sigUpdateDIST(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKDIS(QVector<int>)));
+    connect(&m_sickObj,SIGNAL(sigUpdataRSSI(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKRSSI(QVector<int>)));
 }
 
 MainWindow::~MainWindow()
@@ -35,7 +70,23 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::slot_on_connectSICK(){
+void MainWindow::initTable()
+{
+    ui->tableWidget->setColumnCount(2);
+    QStringList headers;
+    headers<<"Time"<<"Message";
+    ui->tableWidget->setHorizontalHeaderLabels(headers);
+    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    connect(&m_sickObj,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    connect(&m_algorithm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    connect(&m_surfaceComm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    connect(this,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+}
+
+void MainWindow::slot_on_connectSICK()
+{
     m_sickObj.connectSensor();//if failed,sigal will be sent and this->slot_on_tcpSocketError triggered
     //m_timer_SICK.setInterval(2000);
 }
@@ -49,8 +100,6 @@ void MainWindow::slot_on_requestSICK_Permanent()
     connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
-    //communication between surfaceComm and SICK
-    connect(&m_sickObj,SIGNAL(sigUpdateData(QVector<int>)),&m_surfaceComm,SLOT(slot_on_SICKdataUpdate(QVector<int>)));
     m_thread_SICK.start(QThread::HighestPriority);
 }
 
@@ -79,7 +128,9 @@ void MainWindow::slot_on_initSurface()
 {
     m_surfaceComm.init();
     connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
+    connect(this,SIGNAL(sig_informInfo2surface(QVector<int>)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(QVector<int>)));
     m_timer_surface.start(2000);
+    emit sig_statusTable("init surface!");
 }
 
 void MainWindow::slot_on_readFrame()
@@ -140,43 +191,207 @@ void MainWindow::slot_on_sendFrame3()
     data[7] = 0;
     m_can.slot_on_sendFrame(0x0161,8,data);
 }
-
-
-
+/****************************************************************************/
+/****************************************************************************/
+/*********************update data and send to CR0032*************************/
+/*
+TO:SICK obj~~
+INFORM:direction
+TO:CAN obj~~
+INFORM:
+*************************/
 void MainWindow::slot_on_mainTimer_timeout()
 {
-    //test CAN send!
-//    if(m_aa>100)
-//    {
-//        m_aa = 0;
-//    }
-//    uchar data[8] = {0,0,0,0,0,0,0,0};
-//    data[0] = 10;
-//    data[1] = 8;
-//    data[2] = 10;
-//    data[3] = 8;
-//    data[4] = 10;
-//    data[5] = 8;
-//    data[6] = 10;
-//    data[7] = m_aa;
-//    m_can.slot_on_sendFrame(0x0161,8,data);
-//    m_aa++;
-    /***************************************************************************************
-     * ************************************************************************************/
-    //send command to PLC,be careful
+    /*
+     * UDP to surface
+     * *********************************************/
+    QVector<int> vec;
+    int data = 0;
+    /************1th byte********************/
+    //direction
+    if(m_direction==Forward)
+    {
+        data += 1;
+    }
+    else
+    {
+        data += 2;
+    }
+    //joy stick
+    data += 4*m_isNeutralGear;
+    //brake
+    data += 8*m_isBraking;
+    //emergency brake
+    data += 16*m_isEmergencyStop;
+    //main light
+    data += 32*m_isMainLight;
+    //horning
+    data += 64*m_isHorning;
+    vec.push_back(data);
+    /************2th byte********************/
+    data = 0;
+    //control mode
+    switch (m_controlMode)
+    {
+    case Local:
+         data += 0;//00
+        break;
+    case Visible:
+         data += 1;//01
+        break;
+    case Remote:
+         data += 2;//10
+        break;
+    case Auto:
+         data += 3;//11
+        break;
+    default:
+        break;
+    }
+    //engine start or not
+    if(m_isEngineStarted)
+    {
+        data += 4;
+    }
+    else
+    {
+        data += 8;
+    }
+    //engine switch medium
+    if(m_isEngineswitchMedium)
+    {
+        data += 16;
+    }
+    //earth fault
+    if(m_isEarthFault)
+    {
+        data += 32;
+    }
+    //integrated fault
+    if(m_isIntegratedFault)
+    {
+        data += 64;
+    }
+    //over temperature fault
+    if(m_isOverTemperutureFault)
+    {
+        data += 128;
+    }
+    vec.push_back(data);
+    /************3th byte********************/
+    vec.push_back(m_bucketUp);
+    /************4th byte********************/
+    vec.push_back(m_bucketDown);
+    /************5th byte********************/
+    vec.push_back(m_tipingBucket);
+    /************6th byte********************/
+    vec.push_back(m_backBucket);
+    /************7th byte********************/
+    vec.push_back(m_turnLeft);
+    /************8th byte********************/
+    vec.push_back(m_turnRight);
+    /************9th byte********************/
+    vec.push_back(m_accelerator);
+    /************10th byte********************/
+    vec.push_back(m_deaccelerator);
+    /************11th byte********************/
+    vec.push_back(m_velocity);
+    /************12th byte********************/
+    vec.push_back(m_engineSpeed);
+    /************13th byte********************/
+    vec.push_back(m_spliceAngle);
+    /************14th byte********************/
+    vec.push_back(m_oilMass);
+    /************15th byte********************/
+    vec.push_back(m_waterTemperature);
 
+    emit sig_informInfo2surface(vec);
+
+    /***************surface end*********************/
+/************************************************************************/
+    /*
+     *notify algorithm
+     * *********************************************/
+    if(m_controlMode==Auto)
+    {
+         emit sig_autoInfo2Algorithm(true);
+    }
+    else
+    {
+        emit sig_autoInfo2Algorithm(false);
+    }
+    /***************notify algorithm end**************/
+ /************************************************************************/
+    /*
+     *control
+     * *********************************************/
+    switch (m_controlMode)
+    {
+    case Remote:
+        {
+        uchar data[8] = {0,0,0,0,0,0,0,0};
+        data[0] = 42;//Forward??WHY
+        data[1] = 0;
+        data[2] = 0;
+        data[3] = 0;
+        data[4] = 0;
+        data[5] = 0;
+        data[6] = m_turnLeft;//left and right with one is zero!
+        data[7] = m_turnRight;
+        m_can.slot_on_sendFrame(0x191,8,data);
+        data[0] = m_accelerator;//accelerator and deaccelerator with one is zero!
+        data[1] = m_deaccelerator;
+        data[2] = 0;
+        data[3] = 0;
+        data[4] = 0;
+        data[5] = 0;
+        data[6] = 0;
+        data[7] = 0;
+        m_can.slot_on_sendFrame(0x291,8,data);
+        break;
+        }
+    case Auto:
+        {
+        m_algorithm.update();
+        uchar data[8] = {0,0,0,0,0,0,0,0};
+        data[0] = 42;//Forward??WHY
+        data[1] = 0;
+        data[2] = 0;
+        data[3] = 0;
+        data[4] = 0;
+        data[5] = 0;
+        data[6] = m_algorithm.left();//left and right with one is zero!
+        data[7] = m_algorithm.right();
+        m_can.slot_on_sendFrame(0x191,8,data);
+        data[0] = m_algorithm.accelerator();//accelerator and deaccelerator with one is zero!
+        data[1] = m_algorithm.deaccelerator();
+        data[2] = 0;
+        data[3] = 0;
+        data[4] = 0;
+        data[5] = 0;
+        data[6] = 0;
+        data[7] = 0;
+        m_can.slot_on_sendFrame(0x291,8,data);
+        break;
+        }
+        break;
+    default:
+        break;
+    }
+    /***************control end**************/
+/************************************************************************/
     //if(send forward)
     emit sig_informDirection(Forward);
     //if(send backward)
     //emit sig_informDirection(Backward);
 
-    //update vehicle params
+    //UI Update:update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
     ui->label_velocity->setText(QString::number(m_velocity));
     ui->label_courseAngle->setText(QString::number(m_courseAngle));
     ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
     ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
-    ui->label_gear->setText(QString::number(m_gear));
+    ui->label_gear->setText(QString::number(m_isNeutralGear));
     switch (m_controlMode)
     {
     case Local:
@@ -205,10 +420,47 @@ void MainWindow::slot_on_mainTimer_timeout()
     }
 }
 
+void MainWindow::slot_on_setAlgorithm_PID()
+{
+    m_algorithm.setAlgorithmType(0);//0 for PID
+}
+
+void MainWindow::slot_on_setAlgorithm_TrackMemory()
+{
+    m_algorithm.setAlgorithmType(1);//1 for track memory
+}
+
+void MainWindow::slot_on_savedata()
+{
+    QVector<int> vector;
+    vector.push_back(3);
+    vector.push_back(12);
+    vector.push_back(11);
+    vector.push_back(16);
+    m_algorithm.saveData(vector,"path.txt");
+}
+
+void MainWindow::slot_on_openFile()
+{
+    emit sig_statusTable("slot_on_openFile");
+    m_algorithm.initWriting("path.txt");
+    m_algorithm.initWriting("beacon.txt");
+}
+
+void MainWindow::slot_on_loadData()
+{
+    m_algorithm.loadData();
+}
+
+void MainWindow::slot_on_closeFile()
+{
+    m_algorithm.closeFile("path.txt");
+    m_algorithm.closeFile("beacon.txt");
+}
+
 void MainWindow::slot_on_updateCourseAngle(int angle)
 {
     m_courseAngle = angle;
-
 }
 
 void MainWindow::slot_on_updateLateralOffset(int offset)
@@ -223,13 +475,23 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
         return;
     }
     m_vector_CAN304 = vec;
-    //qDebug()<<"CAN304 data are:"<<m_vector_CAN304;
-    QString str;
-    for(int i=0;i<m_vector_CAN304.size();i++)
+    switch(m_vector_CAN304[1])
     {
-        str = QString::number(m_vector_CAN304[i]) + " ";
+    case 0:
+        m_controlMode = Local;
+        break;
+    case 1:
+        m_controlMode = Visible;
+        break;
+    case 2:
+        m_controlMode = Remote;
+        break;
+    case 3:
+        m_controlMode = Auto;
+        break;
+    default:
+        break;
     }
-    ui->label_CAN304->setText(str);
 }
 
 void MainWindow::slot_on_updateCAN305(QVector<int> vec)
@@ -239,14 +501,11 @@ void MainWindow::slot_on_updateCAN305(QVector<int> vec)
         return;
     }
     m_vector_CAN305 = vec;
-   // qDebug()<<"CAN305 data are:"<<m_vector_CAN305;
     QString str;
     for(int i=0;i<m_vector_CAN305.size();i++)
     {
         str = QString::number(m_vector_CAN305[i]) + " ";
     }
-    ui->label_CAN305->setText(str);
-
     //extract splice angle
     if(m_vector_CAN305.at(4) == 0)
     {
@@ -260,5 +519,20 @@ void MainWindow::slot_on_updateCAN305(QVector<int> vec)
     m_velocity = m_vector_CAN305.at(2);
     //extract engine speed
     m_engineSpeed = m_vector_CAN305.at(3);
-    //extract
+    //extract oil mass
+    m_oilMass = m_vector_CAN305.at(5);
+    //extract water temperature
+    m_waterTemperature = m_vector_CAN305.at(6);
+}
+
+//easy to debug:all info shows into the statusBar
+void MainWindow::slot_on_updateStatusTable(QString qstr)
+{
+    qDebug()<<"slot_on_updateStatusBar:"<<qstr;
+    qDebug()<<"rowcount:"<<ui->tableWidget->rowCount();
+    ui->tableWidget->insertRow(ui->tableWidget->rowCount());
+    QTableWidgetItem *newItem = new QTableWidgetItem(QTime::currentTime().toString());
+    ui->tableWidget->setItem(ui->tableWidget->rowCount()-1,0,newItem);
+    QTableWidgetItem *newItem2 = new QTableWidgetItem(qstr);
+    ui->tableWidget->setItem(ui->tableWidget->rowCount()-1,1,newItem2);
 }

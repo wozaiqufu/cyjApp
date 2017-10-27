@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
+QT       += core gui sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = cyjApp
@@ -18,13 +17,15 @@ SOURCES += main.cpp\
     NAV_Control.cpp \
     NetAccess.cpp \
     canobj.cpp \
-    surfacecommunication.cpp
+    surfacecommunication.cpp \
+    autoalgorithm.cpp
 
 HEADERS  += mainwindow.h \
     CAN_SJA1000.h \
     NAV_Control.h \
     NetAccess.h \
     canobj.h \
-    surfacecommunication.h
+    surfacecommunication.h \
+    autoalgorithm.h
 
 FORMS    += mainwindow.ui

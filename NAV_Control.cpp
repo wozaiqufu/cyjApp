@@ -160,7 +160,7 @@ void NAV_Control::NAV_nav_zhen(void)
   //   u_err=kp*(e-e1)+ki*e+kd*(e-2*e1+e2);      //计算控制增量
      u_err=kp*(e-e1)+ki*e+kd*(e-2*e1+e2);
    
-     u=u1+u_err;                               //导航控制器输出 
+     u=u1+u_err;                               //导航控制器输出
       fprintf(stdout, "uuuuuuuuuuuuuuuuu = %f\n",u);
 
    //  dis_tui  = dis_tui+(maichong_data*1.08*cos(head_err)/(1+nav_k_temp*pos_err));

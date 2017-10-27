@@ -12,10 +12,9 @@ public:
     void init();
 private:
 signals:
-
+    void sig_statusTable(QString);
 public slots:
     void slot_doWork();
-    void slot_on_SICKdataUpdate(QVector<int> vec);
     void slot_on_mainwindowUpdate(QVector<int> vec);
     void readPendingDatagrams();
 private:
@@ -23,7 +22,6 @@ private:
     QUdpSocket m_UdpSocket;
     QUdpSocket m_UdpSocket_sender;
     QHostAddress m_hostAddr;
-    QVector<int> m_SICKdata;
     QVector<int> m_mainwindowData;
 };
 

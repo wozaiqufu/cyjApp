@@ -40,6 +40,7 @@ public:
 signals:
     void sigUpdateCAN304(QVector<int>);
     void sigUpdateCAN305(QVector<int>);
+    void sig_statusTable(QString);
 public slots:
     void slot_on_sendFrame(ulong id, uchar length, uchar *data);
     void  slot_dowork();//timer to refresh data
