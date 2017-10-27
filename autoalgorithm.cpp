@@ -363,6 +363,8 @@ void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
 
 bool autoAlgorithm::matchBeacon()
 {
+    //data base is in m_beaconAndMile
+
     return true;
 }
 
