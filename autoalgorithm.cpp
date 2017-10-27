@@ -335,9 +335,6 @@ void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
 //    {
 //        return;
 //    }
-/*************************************************************
- * ******************for test only*****************************
- * ***********************************************************/
    if(vec.size()!=181)
    {
        return;
@@ -376,6 +373,7 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         else
             binary_vec.push_back(0);
     }
+    binary_vec = Pro_binary(binary_vec);
     QVector<int> pos01_binary_vec ;//index of "01"
     QVector<int> pos10_binary_vec ;//index of "10"
     if(binary_vec.at(0) == 1)
@@ -389,20 +387,11 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         {
             pos01_binary_vec.push_back(ix + 1) ;
         }
-        //else if(RSSIX == 0 && binary_vec[ix] == 1 )
-        //{
-        //   pos01_binary_vec.push_back(ix - 1) ;
-        //}
         else if(RSSIX == -1)
         {
             pos10_binary_vec.push_back(ix) ;
         }
-        //qDebug()<<"pos01_binary_vec is :"<<pos01_binary_vec;
-        //qDebug()<<"pos10_binary_vec is :"<<pos10_binary_vec;
     }
-
-    //qDebug()<<"pos01_binary_vec is :"<<pos01_binary_vec;
-    //qDebug()<<"the binary_vec.last() is :"<<binary_vec.last();
 
     if(binary_vec.last() == 1)
     {
@@ -436,5 +425,50 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         }
     }
     return m_beaconLength ;
+
+}
+
+QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
+{
+    QVector<int> Pro_vec = vec;
+    QVector<int> expansion_vec ;
+    QVector<int> corrosion_vec ;
+    //expansion
+    if(Pro_vec.at(0)+Pro_vec.at(1))
+    {
+        Pro_vec1.push_back(1);
+    }
+    else
+    {
+        Pro_vec1.push_back(0);
+    }
+    for(int ix = 1; ix < Pro_vec.size()-1; ++ix)
+    {
+        if(Pro_vec.at(ix-1) + Pro_vec.at(ix) + Pro_vec.at(ix+1))
+        {
+            Pro_vec1.push_back(1);
+        }
+        else
+        {
+            Pro_vec1.push_back(0);
+        }
+    }
+    if(Pro_vec.last() + Pro_vec.at(Pro_vec.size()-2))
+    {
+        Pro_vec1.push_back(1);
+    }
+    else
+    {
+        Pro_vec1.push_back(0);
+    }
+    //corrosion
+    corrosion_vec.push_back(expansion_vec.at(0) * expansion_vec.at(1));
+    for(int ix = 1; ix < expansion_vec.size()-1; ++ix)
+    {
+        corrosion_vec.push_back(expansion_vec.at(ix-1) * expansion_vec.at(ix) * expansion_vec.at(ix+1));
+    }
+    corrosion_vec.push_back(expansion_vec.last() * expansion_vec.at(expansion_vec.size()-2));
+
+    return expansion_vec;
 
 }

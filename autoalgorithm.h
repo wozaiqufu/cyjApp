@@ -1,9 +1,3 @@
-/*
-************************************************************************
-************************************************************************
-************************************************************************
-************************************************************************
- * */
 #ifndef AUTOALGORITHM_H
 #define AUTOALGORITHM_H
 #include <QVector>
@@ -49,12 +43,15 @@ public:
     int right() const;
     int accelerator() const;
     int deaccelerator() const;
+//  double *beaconLength(QVector<int> vec1, QVector<int> vec2);
+
 signals:
     void sig_statusTable(QString);
 private:
     int getBeaconIndex() const;
 //    QByteArray m_beaconLength;
     QVector<int> beaconLength(const int delta);
+    QVector<int> Pro_binary(QVector<int> vec) const;
 public slots:
     //if control mode is Auto,receive SICK data
     void slot_on_updateControlMode(bool isAuto);
