@@ -436,30 +436,30 @@ QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
     //expansion
     if(Pro_vec.at(0)+Pro_vec.at(1))
     {
-        Pro_vec1.push_back(1);
+        corrosion_vec.push_back(1);
     }
     else
     {
-        Pro_vec1.push_back(0);
+        corrosion_vec.push_back(0);
     }
     for(int ix = 1; ix < Pro_vec.size()-1; ++ix)
     {
         if(Pro_vec.at(ix-1) + Pro_vec.at(ix) + Pro_vec.at(ix+1))
         {
-            Pro_vec1.push_back(1);
+            corrosion_vec.push_back(1);
         }
         else
         {
-            Pro_vec1.push_back(0);
+            corrosion_vec.push_back(0);
         }
     }
     if(Pro_vec.last() + Pro_vec.at(Pro_vec.size()-2))
     {
-        Pro_vec1.push_back(1);
+        corrosion_vec.push_back(1);
     }
     else
     {
-        Pro_vec1.push_back(0);
+        corrosion_vec.push_back(0);
     }
     //corrosion
     corrosion_vec.push_back(expansion_vec.at(0) * expansion_vec.at(1));
