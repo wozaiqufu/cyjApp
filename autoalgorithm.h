@@ -77,8 +77,8 @@ private:
     int m_deaccelerator;
     int m_mile;
     static const int m_angleMax = 30;
+    static const double m_Angle_degree2Radian = 0.0174532925;
     static const int m_acceleratorMax = 100;
-    const double m_Angle_degree2Radian = 0.0174532925;
 };
 
 #endif // AUTOALGORITHM_H

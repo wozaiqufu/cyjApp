@@ -564,16 +564,6 @@ void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
     }
     m_surface_control_vec = vec;
 }
-*/
-
-void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
-{
-    if(vec.size()==0)
-    {
-        return;
-    }
-    m_vector_surface = vec;
-}
 
 //easy to debug:all info shows into the statusBar
 void MainWindow::slot_on_updateStatusTable(QString qstr)
