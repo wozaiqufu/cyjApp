@@ -7,7 +7,7 @@
 #include <QTableWidget>
 #include <QThread>
 #include "NetAccess.h"
-#include "canobj.h"
+//#include "canobj.h"
 #include "surfacecommunication.h"
 #include "autoalgorithm.h"
 
@@ -38,7 +38,7 @@ private slots:
     void slot_on_connectSICK();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
-    void slot_on_initCAN();
+    //void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
     void slot_on_sendFrame2();
@@ -55,12 +55,13 @@ public slots:
     void slot_on_updateStatusTable(QString qstr);
     void slot_on_updateCourseAngle(int angle);
     void slot_on_updateLateralOffset(int offset);
-    void slot_on_updateCAN304(QVector<int> vec);
-    void slot_on_updateCAN305(QVector<int> vec);
+    //void slot_on_updateCAN304(QVector<int> vec);
+   // void slot_on_updateCAN305(QVector<int> vec);
+    void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
-    CANobj m_can;
+    //CANobj m_can;
     SurfaceCommunication m_surfaceComm;
     autoAlgorithm m_algorithm;
     QTimer m_timer_SICK;
@@ -71,8 +72,9 @@ private:
     QTimer m_timer_surface;
     QVector<int> m_vector_CAN304;
     QVector<int> m_vector_CAN305;
+    QVector<int> m_vector_surface;
     /*
-     * vehicle states to ground
+     * vehicle states to surface
 *****************************/
     Direction m_direction;
     bool m_isNeutralGear;
