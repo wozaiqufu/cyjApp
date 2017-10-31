@@ -57,6 +57,7 @@ public slots:
     void slot_on_updateLateralOffset(int offset);
     void slot_on_updateCAN304(QVector<int> vec);
     void slot_on_updateCAN305(QVector<int> vec);
+    void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
@@ -71,8 +72,9 @@ private:
     QTimer m_timer_surface;
     QVector<int> m_vector_CAN304;
     QVector<int> m_vector_CAN305;
+    QVector<int> m_vector_surface;
     /*
-     * vehicle states to ground
+     * vehicle states to surface
 *****************************/
     Direction m_direction;
     bool m_isNeutralGear;

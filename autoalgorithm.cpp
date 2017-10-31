@@ -6,7 +6,7 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
   m_type(PID),
-  m_beaconRSSIThreshold(200),
+  m_beaconRSSIThreshold(240),
   m_left(0),
   m_right(0),
   m_accelerator(0),
@@ -373,7 +373,10 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         else
             binary_vec.push_back(0);
     }
+    qDebug()<<"before Pro binary_vec is :"<<binary_vec;
     binary_vec = Pro_binary(binary_vec);
+    qDebug()<<"after Pro binary_vec is :"<<binary_vec;
+    qDebug()<<"the dist is :"<<m_SICKdata;
     QVector<int> pos01_binary_vec ;//index of "01"
     QVector<int> pos10_binary_vec ;//index of "10"
     if(binary_vec.at(0) == 1)
@@ -413,9 +416,9 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
             int temp2 = pos10_binary_vec.at(ix);
             int dist2_beacon = m_SICKdata[temp2];
             double angle_beacon = (pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix)) * m_Angle_degree2Radian;
-            //qDebug()<<"dist1_beacon "<<dist1_beacon;
-            //qDebug()<<"dist2_beacon "<<dist2_beacon;
-            //qDebug()<<"angle_beacon "<<angle_beacon;
+            qDebug()<<"dist1_beacon "<<dist1_beacon;
+            qDebug()<<"dist2_beacon "<<dist2_beacon;
+            qDebug()<<"angle_beacon "<<angle_beacon;
             //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
             int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
             if(temp3 >0)
@@ -436,30 +439,30 @@ QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
     //expansion
     if(Pro_vec.at(0)+Pro_vec.at(1))
     {
-        corrosion_vec.push_back(1);
+        expansion_vec.push_back(1);
     }
     else
     {
-        corrosion_vec.push_back(0);
+        expansion_vec.push_back(0);
     }
     for(int ix = 1; ix < Pro_vec.size()-1; ++ix)
     {
         if(Pro_vec.at(ix-1) + Pro_vec.at(ix) + Pro_vec.at(ix+1))
         {
-            corrosion_vec.push_back(1);
+            expansion_vec.push_back(1);
         }
         else
         {
-            corrosion_vec.push_back(0);
+            expansion_vec.push_back(0);
         }
     }
     if(Pro_vec.last() + Pro_vec.at(Pro_vec.size()-2))
     {
-        corrosion_vec.push_back(1);
+        expansion_vec.push_back(1);
     }
     else
     {
-        corrosion_vec.push_back(0);
+        expansion_vec.push_back(0);
     }
     //corrosion
     corrosion_vec.push_back(expansion_vec.at(0) * expansion_vec.at(1));
@@ -469,6 +472,6 @@ QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
     }
     corrosion_vec.push_back(expansion_vec.last() * expansion_vec.at(expansion_vec.size()-2));
 
-    return expansion_vec;
+    return corrosion_vec;
 
 }
