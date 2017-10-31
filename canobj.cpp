@@ -79,25 +79,25 @@ void CANobj::slot_dowork()
     if(0 == ret) {
         qDebug()<<"sead failed!";
     }
-    m_CAN304.clear();
-    m_CAN305.clear();
+    m_CAN306.clear();
+    m_CAN307.clear();
     for(int i=0;i<m_frameRecv.can_dlc;i++)
     {
-        if(m_frameRecv.can_id == 0x304)
+        if(m_frameRecv.can_id == 0x306)
         {
-            m_CAN304.push_back(m_frameRecv.data[i]);
+            m_CAN306.push_back(m_frameRecv.data[i]);
         }
-        else if(m_frameRecv.can_id == 0x305)
+        else if(m_frameRecv.can_id == 0x307)
         {
-            m_CAN305.push_back(m_frameRecv.data[i]);
+            m_CAN307.push_back(m_frameRecv.data[i]);
         }
         else
         {
             return;
         }
     }
-    emit sigUpdateCAN304(m_CAN304);
-    emit sigUpdateCAN305(m_CAN305);
+    emit sigUpdateCAN306(m_CAN306);
+    emit sigUpdateCAN307(m_CAN307);
     //printFrame(&m_frameRecv);
 }
 
