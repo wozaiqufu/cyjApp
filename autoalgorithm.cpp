@@ -335,7 +335,7 @@ void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
 //    {
 //        return;
 //    }
-   if(vec.size()!=181)
+   if(vec.size()!=361)
    {
        return;
    }
@@ -348,13 +348,13 @@ void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
 void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
 {
     //qDebug()<<"slot_on_updateSICKRSSI";
-    if(vec.size()!=181)
+    if(vec.size()!=361)
     {
         return;
     }
     m_SICKRSSI = vec;
-    qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
-    qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
+    //qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
+   // qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
     qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
 }
 
@@ -373,10 +373,10 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         else
             binary_vec.push_back(0);
     }
-    qDebug()<<"before Pro binary_vec is :"<<binary_vec;
+    //qDebug()<<"before Pro binary_vec is :"<<binary_vec;
     binary_vec = Pro_binary(binary_vec);
-    qDebug()<<"after Pro binary_vec is :"<<binary_vec;
-    qDebug()<<"the dist is :"<<m_SICKdata;
+    //qDebug()<<"after Pro binary_vec is :"<<binary_vec;
+    //qDebug()<<"the dist is :"<<m_SICKdata;
     QVector<int> pos01_binary_vec ;//index of "01"
     QVector<int> pos10_binary_vec ;//index of "10"
     if(binary_vec.at(0) == 1)
@@ -408,6 +408,8 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
     {
         for(int ix = 0;ix < pos10_binary_vec.size(); ++ix)
         {
+            double angle_num = pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix);
+            if(angle_num > 2)
             //qDebug()<<"start Length";
             int temp1 = pos01_binary_vec.at(ix);
            // qDebug()<<"var"<<temp1;
@@ -423,8 +425,18 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
             int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
             if(temp3 >0)
             {
-                 m_beaconLength.push_back(temp3);
+                double angle_beacon = angle_num * m_Angle_degree2Radian * 0.5;
+                int temp1 = pos01_binary_vec.at(ix);
+                int dist1_beacon = m_SICKdata[temp1];
+                int temp2 = pos10_binary_vec.at(ix);
+                int dist2_beacon = m_SICKdata[temp2];
+                int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
+                qDebug()<<"dist1_beacon "<<dist1_beacon;
+                qDebug()<<"dist2_beacon "<<dist2_beacon;
+                qDebug()<<"angle_beacon "<<angle_beacon;
+                m_beaconLength.push_back(temp3);
             }
+            //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
         }
     }
     return m_beaconLength ;

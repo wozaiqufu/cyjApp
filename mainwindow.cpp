@@ -76,9 +76,9 @@ void MainWindow::initTable()
     QStringList headers;
     headers<<"Time"<<"Message";
     ui->tableWidget->setHorizontalHeaderLabels(headers);
-    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-    connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    //connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_sickObj,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_algorithm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_surfaceComm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
@@ -93,14 +93,20 @@ void MainWindow::slot_on_connectSICK()
 
 void MainWindow::slot_on_requestSICK_Permanent()
 {
-    m_sickObj.moveToThread(&m_thread_SICK);
-    connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
-    connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
+//    m_sickObj.moveToThread(&m_thread_SICK);
+//    connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
+//    connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
+//    connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
+//    connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
+//    connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
+//    connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
+//    m_thread_SICK.start(QThread::HighestPriority);
+
+    m_sickObj.slot_on_requestContinousRead();
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
     connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
-    m_thread_SICK.start(QThread::HighestPriority);
 }
 
 void MainWindow::slot_on_requestSICK_PermanentStop()
@@ -108,7 +114,7 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
     emit sig_stopPermanentReq();
 }
 
-void MainWindow::slot_on_initCAN()
+/*void MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
     m_timer_CAN.setInterval(5);
@@ -123,6 +129,7 @@ void MainWindow::slot_on_initCAN()
     _CANReady = true;
      //_can8900.CAN_Init(0);
 }
+*/
 
 void MainWindow::slot_on_initSurface()
 {
@@ -163,7 +170,7 @@ void MainWindow::slot_on_sendFrame()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame2()
@@ -177,7 +184,7 @@ void MainWindow::slot_on_sendFrame2()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame3()
@@ -191,7 +198,7 @@ void MainWindow::slot_on_sendFrame3()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 /****************************************************************************/
 /****************************************************************************/
@@ -363,7 +370,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = m_algorithm.left();//left and right with one is zero!
         data[7] = m_algorithm.right();
-        m_can.slot_on_sendFrame(0x191,8,data);
+        //m_can.slot_on_sendFrame(0x191,8,data);
         data[0] = m_algorithm.accelerator();//accelerator and deaccelerator with one is zero!
         data[1] = m_algorithm.deaccelerator();
         data[2] = 0;
@@ -372,7 +379,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x291,8,data);
+       // m_can.slot_on_sendFrame(0x291,8,data);
         break;
         }
         break;
@@ -556,6 +563,16 @@ void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
         return;
     }
     m_surface_control_vec = vec;
+}
+*/
+
+void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
+{
+    if(vec.size()==0)
+    {
+        return;
+    }
+    m_vector_surface = vec;
 }
 
 //easy to debug:all info shows into the statusBar

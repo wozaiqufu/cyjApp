@@ -43,8 +43,8 @@ private slots:
 private:
     QMutex m_Mutex;
     static const int m_hostPort_SICK = 2111;
-    static const double m_PI = 3.141592653;
-    static const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection
+    const double m_PI = 3.141592653;
+    const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection
     QByteArray m_dataRecieved_forward;
     QByteArray m_dataRecieved_backward;
     QTcpSocket m_tcpSocket_forward;
@@ -60,11 +60,12 @@ private:
     bool m_bIsForwardConnected;
     bool m_bIsBackwardConnected;
     Direction m_currentDirection;
-    static const double m_pi = 3.141592653;
-    static const double m_Angle_degree2Radian = 0.0174532925;
-    static const int m_angleStart = 0;
-    static const int m_anglel1l2 = 30;
-    static const int m_angleDeltaMax = 30;
+    const double m_pi = 3.141592653;
+    const double m_Angle_degree2Radian = 0.0174532925;
+    const int m_angleStart = 0;
+    const int m_anglel1l2 = 30;
+    const int m_angleDeltaMax = 30;
+    const int m_angleResolution = 1;
     int m_courseAngle;
 
 };

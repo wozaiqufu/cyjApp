@@ -7,7 +7,7 @@
 #include <QTableWidget>
 #include <QThread>
 #include "NetAccess.h"
-#include "canobj.h"
+//#include "canobj.h"
 #include "surfacecommunication.h"
 #include "autoalgorithm.h"
 
@@ -38,7 +38,7 @@ private slots:
     void slot_on_connectSICK();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
-    void slot_on_initCAN();
+    //void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
     void slot_on_sendFrame2();
@@ -61,7 +61,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
-    CANobj m_can;
+    //CANobj m_can;
     SurfaceCommunication m_surfaceComm;
     autoAlgorithm m_algorithm;
     QTimer m_timer_SICK;
