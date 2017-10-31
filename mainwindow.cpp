@@ -28,8 +28,8 @@ m_deaccelerator(0),
 m_velocity(0),
 m_engineSpeed(0),
 m_spliceAngle(0),
-m_oilMass(0),
 m_waterTemperature(0),
+m_alarm(0),
 /*************************/
 m_courseAngle(0),
 m_lateralOffset(0),
@@ -120,8 +120,8 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
     m_timer_CAN.setInterval(5);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
-    connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
@@ -310,9 +310,9 @@ void MainWindow::slot_on_mainTimer_timeout()
     /************13th byte********************/
     vec.push_back(m_spliceAngle);
     /************14th byte********************/
-    vec.push_back(m_oilMass);
-    /************15th byte********************/
     vec.push_back(m_waterTemperature);
+    /************15th byte********************/
+    vec.push_back(m_alarm);
     emit sig_informInfo2surface(vec);
     /***************surface end*********************/
 /************************************************************************/
@@ -337,24 +337,25 @@ void MainWindow::slot_on_mainTimer_timeout()
     case Remote:
         {
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 42;//Forward??WHY
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        data[6] = m_turnLeft;//left and right with one is zero!
-        data[7] = m_turnRight;
-        //m_can.slot_on_sendFrame(0x191,8,data);
-        data[0] = m_accelerator;//accelerator and deaccelerator with one is zero!
-        data[1] = m_deaccelerator;
-        data[2] = 0;
+        data[0] = 0x55;
+        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
+        int temp = m_surface_control_vec.at(1)/4;
+        data[2] = 4*temp;
+        data[3] = m_surface_control_vec.at(3);
+        data[4] = m_surface_control_vec.at(4);
+        data[5] = m_surface_control_vec.at(5);
+        data[6] = m_surface_control_vec.at(6);
+        data[7] = m_surface_control_vec.at(7);
+        m_can.slot_on_sendFrame(0x304,8,data);
+        data[0] = m_surface_control_vec.at(8);
+        data[1] = m_surface_control_vec.at(9);
+        data[2] = m_surface_control_vec.at(10);
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-       // m_can.slot_on_sendFrame(0x291,8,data);
+        m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
     case Auto:
@@ -475,14 +476,14 @@ void MainWindow::slot_on_updateLateralOffset(int offset)
     m_lateralOffset = offset;
 }
 
-/*void MainWindow::slot_on_updateCAN304(QVector<int> vec)
+void MainWindow::slot_on_updateCAN306(QVector<int> vec)
 {
     if(vec.size()<8)
     {
         return;
     }
-    m_vector_CAN304 = vec;
-    switch(m_vector_CAN304[1])
+    //extract control mode
+    switch(vec.at(2)%4)
     {
     case 0:
         m_controlMode = Local;
@@ -499,38 +500,69 @@ void MainWindow::slot_on_updateLateralOffset(int offset)
     default:
         break;
     }
-}
-*/
+    //extract engine start
+    if((vec.at(2)/4)%2==1)
+    {
+        m_isEngineStarted = true;
+    }
+    else
+    {
+        m_isEngineStarted = false;
+    }
+    //extract engine stop
+    if((vec.at(2)/8)%2==1)
+    {
+        m_isEngineStarted = false;
+    }
+    else
+    {
+        m_isEngineStarted = true;
+    }
+    //extract engine switch medium
+    if((vec.at(2)/16)%2==1)
+    {
+        m_isEngineswitchMedium = true;
+    }
+    else
+    {
+        m_isEngineStarted = false;
+    }
+    m_bucketUp = vec.at(3);
+    m_bucketDown = vec.at(4);
+    m_tipingBucket = vec.at(5);
+    m_backBucket = vec.at(6);
+    m_turnLeft = vec.at(7);
 
-/*void MainWindow::slot_on_updateCAN305(QVector<int> vec)
+
+}
+
+void MainWindow::slot_on_updateCAN307(QVector<int> vec)
 {
     if(vec.size()<8)
     {
         return;
     }
-    m_vector_CAN305 = vec;
-    QString str;
-    for(int i=0;i<m_vector_CAN305.size();i++)
-    {
-        str = QString::number(m_vector_CAN305[i]) + " ";
-    }
-    //extract splice angle
-    if(m_vector_CAN305.at(4) == 0)
+    m_turnRight = vec.at(0);
+    m_accelerator = vec.at(1);
+    m_deaccelerator = vec.at(2);
+    m_velocity = vec.at(3);
+    m_engineSpeed = vec.at(4);
+    m_spliceAngle = vec.at(5);
+    m_waterTemperature = vec.at(6);
+    m_alarm = vec.at(7);
+}
+
+void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
+{
+    if(vec.size()!=11)//receive control from surface
     {
         return;
     }
-    else
+    if(vec.at(0)!=85)//first data is const 0x55
     {
-        m_spliceAngle = m_vector_CAN305.at(4);
+        return;
     }
-    //extract velocity
-    m_velocity = m_vector_CAN305.at(2);
-    //extract engine speed
-    m_engineSpeed = m_vector_CAN305.at(3);
-    //extract oil mass
-    m_oilMass = m_vector_CAN305.at(5);
-    //extract water temperature
-    m_waterTemperature = m_vector_CAN305.at(6);
+    m_surface_control_vec = vec;
 }
 */
 

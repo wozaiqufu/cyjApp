@@ -38,8 +38,8 @@ public:
     explicit CANobj(QObject *parent = 0);
      bool initCAN(const int portIndex);
 signals:
-    void sigUpdateCAN304(QVector<int>);
-    void sigUpdateCAN305(QVector<int>);
+    void sigUpdateCAN306(QVector<int>);
+    void sigUpdateCAN307(QVector<int>);
     void sig_statusTable(QString);
 public slots:
     void slot_on_sendFrame(ulong id, uchar length, uchar *data);
@@ -56,8 +56,8 @@ private:
     struct can_filter m_filter[2];
     struct timeval m_tv;
     fd_set m_rset;
-    QVector<int> m_CAN304;
-    QVector<int> m_CAN305;
+    QVector<int> m_CAN306;
+    QVector<int> m_CAN307;
 };
 
 #endif // CANOBJ_H
