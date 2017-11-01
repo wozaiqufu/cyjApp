@@ -6,12 +6,18 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
   m_type(PID),
+  m_mileDeltaCalib(0),
   m_beaconRSSIThreshold(240),
+  m_beaconMatchThreshold(0.5),
   m_left(0),
   m_right(0),
   m_accelerator(0),
   m_deaccelerator(0),
-  m_mile(0)
+  m_mile(0),
+  m_mile_calib(0),
+  m_beaconIndex(0),
+  m_beaconMatchPre(0),
+  m_beaconMatchPost(0)
 {
     m_pathFile.setFileName("path.txt");
     m_beaconFile.setFileName("beacon.txt");
@@ -267,9 +273,64 @@ void autoAlgorithm::setAlgorithmType(const int type)
     }
 }
 
+void autoAlgorithm::matchMile()
+{
+    int key = 0;
+    m_mile_calib = m_mile + m_mileDeltaCalib;
+    key = m_trackMap.lowerBound(m_mile_calib).key();
+    if(m_trackMap.contains(key))
+    {
+        m_accelerator = m_trackMap[key].acc;
+        m_left = m_trackMap[key].left;
+        m_right = m_trackMap[key].right;
+    }
+}
+
+int autoAlgorithm::calibMile()
+{
+    m_mileDeltaCalib = m_beaconAndMile.at(m_beaconIndex).mile - m_mile;
+}
+
+bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
+{
+    //yanbo modifying
+
+    //if success
+    //m_beaconIndex = index;
+}
+
 void autoAlgorithm::update()
 {
-
+    if(matchBeacon(beaconLength(m_beaconRSSIThreshold),m_beaconMatchThreshold))
+    {
+        m_beaconMatchPre = m_beaconMatchPost;
+        m_beaconMatchPost = 1;
+    }
+    else
+    {
+        m_beaconMatchPre = m_beaconMatchPost;
+        m_beaconMatchPost = 0;
+    }
+    switch(m_beaconMatchPost-m_beaconMatchPre)
+    {
+    case -1:
+    {
+        calibMile();
+        matchMile();
+        break;
+    }
+    case 0:
+    {
+        matchMile();
+        break;
+    }
+    case 1:
+    {
+        matchMile();
+        break;
+    }
+    default:break;
+    }
 }
 
 int autoAlgorithm::left() const
@@ -358,9 +419,9 @@ void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
     qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
 }
 
-bool autoAlgorithm::matchBeacon()
+void autoAlgorithm::slot_on_updateMile(int mile)
 {
-    return true;
+    m_mile = mile;
 }
 
 QVector<int> autoAlgorithm::beaconLength(const int delta)

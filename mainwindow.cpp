@@ -30,6 +30,7 @@ m_engineSpeed(0),
 m_spliceAngle(0),
 m_waterTemperature(0),
 m_alarm(0),
+m_mileMeter(0),
 /*************************/
 m_courseAngle(0),
 m_lateralOffset(0),
@@ -63,6 +64,8 @@ _CANReady(false)
     //signals and slots SICK and autoAlgorithm
     connect(&m_sickObj,SIGNAL(sigUpdateDIST(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKDIS(QVector<int>)));
     connect(&m_sickObj,SIGNAL(sigUpdataRSSI(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKRSSI(QVector<int>)));
+    //signals and slots MainWindow and Algorithm
+    connect(this,SIGNAL(sig_informAlgrithmMile(int)),&m_algorithm,SLOT(slot_on_updateMile(int)));
 }
 
 MainWindow::~MainWindow()
@@ -321,7 +324,8 @@ void MainWindow::slot_on_mainTimer_timeout()
      * *********************************************/
     if(m_controlMode==Auto)
     {
-         emit sig_autoInfo2Algorithm(true);
+        emit sig_autoInfo2Algorithm(true);
+        emit sig_informAlgrithmMile(m_mileMeter);
     }
     else
     {
@@ -362,24 +366,25 @@ void MainWindow::slot_on_mainTimer_timeout()
         {
         m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 42;//Forward??WHY
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        data[6] = m_algorithm.left();//left and right with one is zero!
-        data[7] = m_algorithm.right();
-        //m_can.slot_on_sendFrame(0x191,8,data);
-        data[0] = m_algorithm.accelerator();//accelerator and deaccelerator with one is zero!
-        data[1] = m_algorithm.deaccelerator();
-        data[2] = 0;
+        data[0] = 0x55;
+        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
+        int temp = m_surface_control_vec.at(1)/4;
+        data[2] = 4*temp;
+        data[3] = m_surface_control_vec.at(3);
+        data[4] = m_surface_control_vec.at(4);
+        data[5] = m_surface_control_vec.at(5);
+        data[6] = m_surface_control_vec.at(6);
+        data[7] = m_algorithm.left();
+        m_can.slot_on_sendFrame(0x304,8,data);
+        data[0] = m_algorithm.right();
+        data[1] = m_algorithm.accelerator();
+        data[2] = m_algorithm.deaccelerator();;
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-       // m_can.slot_on_sendFrame(0x291,8,data);
+        m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
         break;
@@ -548,8 +553,9 @@ void MainWindow::slot_on_updateCAN307(QVector<int> vec)
     m_velocity = vec.at(3);
     m_engineSpeed = vec.at(4);
     m_spliceAngle = vec.at(5);
-    m_waterTemperature = vec.at(6);
-    m_alarm = vec.at(7);
+//    m_waterTemperature = vec.at(6);
+//    m_alarm = vec.at(7);
+    m_mileMeter = vec.at(6)*256 + vec.at(7);
 }
 
 void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)

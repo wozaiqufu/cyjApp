@@ -32,6 +32,7 @@ signals:
     void sig_informDirection(int);
     void sig_informInfo2surface(QVector<int> vec);
     void sig_autoInfo2Algorithm(bool);
+    void sig_informAlgrithmMile(int);
     void finished();
     void sig_statusTable(QString);
 private slots:
@@ -98,6 +99,7 @@ private:
     int m_spliceAngle;
     int m_waterTemperature;
     int m_alarm;
+    int m_mileMeter;//in cm
     /*
      *for control algorithm use
 *****************************/
