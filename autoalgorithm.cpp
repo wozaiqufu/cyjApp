@@ -6,12 +6,18 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
   m_type(PID),
-  m_beaconRSSIThreshold(200),
+  m_mileDeltaCalib(0),
+  m_beaconRSSIThreshold(240),
+  m_beaconMatchThreshold(0.5),
   m_left(0),
   m_right(0),
   m_accelerator(0),
   m_deaccelerator(0),
-  m_mile(0)
+  m_mile(0),
+  m_mile_calib(0),
+  m_beaconIndex(0),
+  m_beaconMatchPre(0),
+  m_beaconMatchPost(0)
 {
     m_pathFile.setFileName("path.txt");
     m_beaconFile.setFileName("beacon.txt");
@@ -267,9 +273,64 @@ void autoAlgorithm::setAlgorithmType(const int type)
     }
 }
 
+void autoAlgorithm::matchMile()
+{
+    int key = 0;
+    m_mile_calib = m_mile + m_mileDeltaCalib;
+    key = m_trackMap.lowerBound(m_mile_calib).key();
+    if(m_trackMap.contains(key))
+    {
+        m_accelerator = m_trackMap[key].acc;
+        m_left = m_trackMap[key].left;
+        m_right = m_trackMap[key].right;
+    }
+}
+
+int autoAlgorithm::calibMile()
+{
+    m_mileDeltaCalib = m_beaconAndMile.at(m_beaconIndex).mile - m_mile;
+}
+
+bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
+{
+    //yanbo modifying
+
+    //if success
+    //m_beaconIndex = index;
+}
+
 void autoAlgorithm::update()
 {
-
+    if(matchBeacon(beaconLength(m_beaconRSSIThreshold),m_beaconMatchThreshold))
+    {
+        m_beaconMatchPre = m_beaconMatchPost;
+        m_beaconMatchPost = 1;
+    }
+    else
+    {
+        m_beaconMatchPre = m_beaconMatchPost;
+        m_beaconMatchPost = 0;
+    }
+    switch(m_beaconMatchPost-m_beaconMatchPre)
+    {
+    case -1:
+    {
+        calibMile();
+        matchMile();
+        break;
+    }
+    case 0:
+    {
+        matchMile();
+        break;
+    }
+    case 1:
+    {
+        matchMile();
+        break;
+    }
+    default:break;
+    }
 }
 
 int autoAlgorithm::left() const
@@ -335,10 +396,7 @@ void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
 //    {
 //        return;
 //    }
-/*************************************************************
- * ******************for test only*****************************
- * ***********************************************************/
-   if(vec.size()!=181)
+   if(vec.size()!=361)
    {
        return;
    }
@@ -351,19 +409,19 @@ void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
 void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
 {
     //qDebug()<<"slot_on_updateSICKRSSI";
-    if(vec.size()!=181)
+    if(vec.size()!=361)
     {
         return;
     }
     m_SICKRSSI = vec;
-    qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
-    qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
+    //qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
+   // qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
     qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
 }
 
-bool autoAlgorithm::matchBeacon()
+void autoAlgorithm::slot_on_updateMile(int mile)
 {
-    return true;
+    m_mile = mile;
 }
 
 QVector<int> autoAlgorithm::beaconLength(const int delta)
@@ -376,6 +434,10 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         else
             binary_vec.push_back(0);
     }
+    //qDebug()<<"before Pro binary_vec is :"<<binary_vec;
+    binary_vec = Pro_binary(binary_vec);
+    //qDebug()<<"after Pro binary_vec is :"<<binary_vec;
+    //qDebug()<<"the dist is :"<<m_SICKdata;
     QVector<int> pos01_binary_vec ;//index of "01"
     QVector<int> pos10_binary_vec ;//index of "10"
     if(binary_vec.at(0) == 1)
@@ -389,20 +451,11 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
         {
             pos01_binary_vec.push_back(ix + 1) ;
         }
-        //else if(RSSIX == 0 && binary_vec[ix] == 1 )
-        //{
-        //   pos01_binary_vec.push_back(ix - 1) ;
-        //}
         else if(RSSIX == -1)
         {
             pos10_binary_vec.push_back(ix) ;
         }
-        //qDebug()<<"pos01_binary_vec is :"<<pos01_binary_vec;
-        //qDebug()<<"pos10_binary_vec is :"<<pos10_binary_vec;
     }
-
-    //qDebug()<<"pos01_binary_vec is :"<<pos01_binary_vec;
-    //qDebug()<<"the binary_vec.last() is :"<<binary_vec.last();
 
     if(binary_vec.last() == 1)
     {
@@ -414,27 +467,82 @@ QVector<int> autoAlgorithm::beaconLength(const int delta)
     m_beaconLength.clear();
     if(pos01_binary_vec.size() == pos10_binary_vec.size())
     {
+        int dist1_beacon = 0;
+        int dist2_beacon = 0;
         for(int ix = 0;ix < pos10_binary_vec.size(); ++ix)
         {
+            double angle_num = pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix);
+            if(angle_num > 2)
             //qDebug()<<"start Length";
-            int temp1 = pos01_binary_vec.at(ix);
-           // qDebug()<<"var"<<temp1;
-            int dist1_beacon = m_SICKdata[temp1];
-            //qDebug()<<"dist_beacon1 "<<dist_beacon1;
-            int temp2 = pos10_binary_vec.at(ix);
-            int dist2_beacon = m_SICKdata[temp2];
+            dist1_beacon = m_SICKdata.at(pos01_binary_vec.at(ix));
+            dist2_beacon = m_SICKdata.at(pos10_binary_vec.at(ix));
             double angle_beacon = (pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix)) * m_Angle_degree2Radian;
-            //qDebug()<<"dist1_beacon "<<dist1_beacon;
-            //qDebug()<<"dist2_beacon "<<dist2_beacon;
-            //qDebug()<<"angle_beacon "<<angle_beacon;
+            qDebug()<<"dist1_beacon "<<dist1_beacon;
+            qDebug()<<"dist2_beacon "<<dist2_beacon;
+            qDebug()<<"angle_beacon "<<angle_beacon;
             //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
             int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
             if(temp3 >0)
             {
-                 m_beaconLength.push_back(temp3);
+                double angle_beacon = angle_num * m_Angle_degree2Radian * 0.5;
+                int temp1 = pos01_binary_vec.at(ix);
+                int dist1_beacon = m_SICKdata[temp1];
+                int temp2 = pos10_binary_vec.at(ix);
+                int dist2_beacon = m_SICKdata[temp2];
+                int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
+                qDebug()<<"dist1_beacon "<<dist1_beacon;
+                qDebug()<<"dist2_beacon "<<dist2_beacon;
+                qDebug()<<"angle_beacon "<<angle_beacon;
+                m_beaconLength.push_back(temp3);
             }
+            //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
         }
     }
     return m_beaconLength ;
+
+}
+
+QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
+{
+    QVector<int> Pro_vec = vec;
+    QVector<int> expansion_vec ;
+    QVector<int> corrosion_vec ;
+    //expansion
+    if(Pro_vec.at(0)+Pro_vec.at(1))
+    {
+        expansion_vec.push_back(1);
+    }
+    else
+    {
+        expansion_vec.push_back(0);
+    }
+    for(int ix = 1; ix < Pro_vec.size()-1; ++ix)
+    {
+        if(Pro_vec.at(ix-1) + Pro_vec.at(ix) + Pro_vec.at(ix+1))
+        {
+            expansion_vec.push_back(1);
+        }
+        else
+        {
+            expansion_vec.push_back(0);
+        }
+    }
+    if(Pro_vec.last() + Pro_vec.at(Pro_vec.size()-2))
+    {
+        expansion_vec.push_back(1);
+    }
+    else
+    {
+        expansion_vec.push_back(0);
+    }
+    //corrosion
+    corrosion_vec.push_back(expansion_vec.at(0) * expansion_vec.at(1));
+    for(int ix = 1; ix < expansion_vec.size()-1; ++ix)
+    {
+        corrosion_vec.push_back(expansion_vec.at(ix-1) * expansion_vec.at(ix) * expansion_vec.at(ix+1));
+    }
+    corrosion_vec.push_back(expansion_vec.last() * expansion_vec.at(expansion_vec.size()-2));
+
+    return corrosion_vec;
 
 }

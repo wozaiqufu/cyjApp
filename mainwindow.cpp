@@ -28,8 +28,9 @@ m_deaccelerator(0),
 m_velocity(0),
 m_engineSpeed(0),
 m_spliceAngle(0),
-m_oilMass(0),
 m_waterTemperature(0),
+m_alarm(0),
+m_mileMeter(0),
 /*************************/
 m_courseAngle(0),
 m_lateralOffset(0),
@@ -63,6 +64,8 @@ _CANReady(false)
     //signals and slots SICK and autoAlgorithm
     connect(&m_sickObj,SIGNAL(sigUpdateDIST(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKDIS(QVector<int>)));
     connect(&m_sickObj,SIGNAL(sigUpdataRSSI(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKRSSI(QVector<int>)));
+    //signals and slots MainWindow and Algorithm
+    connect(this,SIGNAL(sig_informAlgrithmMile(int)),&m_algorithm,SLOT(slot_on_updateMile(int)));
 }
 
 MainWindow::~MainWindow()
@@ -76,9 +79,9 @@ void MainWindow::initTable()
     QStringList headers;
     headers<<"Time"<<"Message";
     ui->tableWidget->setHorizontalHeaderLabels(headers);
-    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-    connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    //connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_sickObj,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_algorithm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_surfaceComm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
@@ -93,14 +96,20 @@ void MainWindow::slot_on_connectSICK()
 
 void MainWindow::slot_on_requestSICK_Permanent()
 {
-    m_sickObj.moveToThread(&m_thread_SICK);
-    connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
-    connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
+//    m_sickObj.moveToThread(&m_thread_SICK);
+//    connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
+//    connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
+//    connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
+//    connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
+//    connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
+//    connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
+//    m_thread_SICK.start(QThread::HighestPriority);
+
+    m_sickObj.slot_on_requestContinousRead();
     connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
     connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
-    m_thread_SICK.start(QThread::HighestPriority);
 }
 
 void MainWindow::slot_on_requestSICK_PermanentStop()
@@ -108,14 +117,14 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
     emit sig_stopPermanentReq();
 }
 
-void MainWindow::slot_on_initCAN()
+/*void MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
     m_timer_CAN.setInterval(5);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
-    connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
     m_can.initCAN(0);
@@ -123,12 +132,15 @@ void MainWindow::slot_on_initCAN()
     _CANReady = true;
      //_can8900.CAN_Init(0);
 }
+*/
 
 void MainWindow::slot_on_initSurface()
 {
     m_surfaceComm.init();
     connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
     connect(this,SIGNAL(sig_informInfo2surface(QVector<int>)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(QVector<int>)));
+    connect(&m_surfaceComm,SIGNAL(sig_informMainwindow(QVector<int>)),this,SLOT(slot_on_surfaceUpdate(QVector<int>)));
+
     m_timer_surface.start(2000);
     emit sig_statusTable("init surface!");
 }
@@ -161,7 +173,7 @@ void MainWindow::slot_on_sendFrame()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame2()
@@ -175,7 +187,7 @@ void MainWindow::slot_on_sendFrame2()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 
 void MainWindow::slot_on_sendFrame3()
@@ -189,7 +201,7 @@ void MainWindow::slot_on_sendFrame3()
     data[5] = 0;
     data[6] = 0;
     data[7] = 0;
-    m_can.slot_on_sendFrame(0x0161,8,data);
+    //m_can.slot_on_sendFrame(0x0161,8,data);
 }
 /****************************************************************************/
 /****************************************************************************/
@@ -207,7 +219,7 @@ void MainWindow::slot_on_mainTimer_timeout()
      * *********************************************/
     QVector<int> vec;
     int data = 0;
-    /************1th byte********************/
+     /************1th byte********************/
     //direction
     if(m_direction==Forward)
     {
@@ -217,7 +229,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     {
         data += 2;
     }
-    //joy stick
+    //is neutralGear
     data += 4*m_isNeutralGear;
     //brake
     data += 8*m_isBraking;
@@ -278,7 +290,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data += 128;
     }
     vec.push_back(data);
-    /************3th byte********************/
+    /************3th byte*************  *******/
     vec.push_back(m_bucketUp);
     /************4th byte********************/
     vec.push_back(m_bucketDown);
@@ -301,12 +313,10 @@ void MainWindow::slot_on_mainTimer_timeout()
     /************13th byte********************/
     vec.push_back(m_spliceAngle);
     /************14th byte********************/
-    vec.push_back(m_oilMass);
-    /************15th byte********************/
     vec.push_back(m_waterTemperature);
-
+    /************15th byte********************/
+    vec.push_back(m_alarm);
     emit sig_informInfo2surface(vec);
-
     /***************surface end*********************/
 /************************************************************************/
     /*
@@ -314,7 +324,8 @@ void MainWindow::slot_on_mainTimer_timeout()
      * *********************************************/
     if(m_controlMode==Auto)
     {
-         emit sig_autoInfo2Algorithm(true);
+        emit sig_autoInfo2Algorithm(true);
+        emit sig_informAlgrithmMile(m_mileMeter);
     }
     else
     {
@@ -330,48 +341,50 @@ void MainWindow::slot_on_mainTimer_timeout()
     case Remote:
         {
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 42;//Forward??WHY
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        data[6] = m_turnLeft;//left and right with one is zero!
-        data[7] = m_turnRight;
-        m_can.slot_on_sendFrame(0x191,8,data);
-        data[0] = m_accelerator;//accelerator and deaccelerator with one is zero!
-        data[1] = m_deaccelerator;
-        data[2] = 0;
+        data[0] = 0x55;
+        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
+        int temp = m_surface_control_vec.at(1)/4;
+        data[2] = 4*temp;
+        data[3] = m_surface_control_vec.at(3);
+        data[4] = m_surface_control_vec.at(4);
+        data[5] = m_surface_control_vec.at(5);
+        data[6] = m_surface_control_vec.at(6);
+        data[7] = m_surface_control_vec.at(7);
+        m_can.slot_on_sendFrame(0x304,8,data);
+        data[0] = m_surface_control_vec.at(8);
+        data[1] = m_surface_control_vec.at(9);
+        data[2] = m_surface_control_vec.at(10);
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x291,8,data);
+        m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
     case Auto:
         {
         m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 42;//Forward??WHY
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        data[6] = m_algorithm.left();//left and right with one is zero!
-        data[7] = m_algorithm.right();
-        m_can.slot_on_sendFrame(0x191,8,data);
-        data[0] = m_algorithm.accelerator();//accelerator and deaccelerator with one is zero!
-        data[1] = m_algorithm.deaccelerator();
-        data[2] = 0;
+        data[0] = 0x55;
+        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
+        int temp = m_surface_control_vec.at(1)/4;
+        data[2] = 4*temp;
+        data[3] = m_surface_control_vec.at(3);
+        data[4] = m_surface_control_vec.at(4);
+        data[5] = m_surface_control_vec.at(5);
+        data[6] = m_surface_control_vec.at(6);
+        data[7] = m_algorithm.left();
+        m_can.slot_on_sendFrame(0x304,8,data);
+        data[0] = m_algorithm.right();
+        data[1] = m_algorithm.accelerator();
+        data[2] = m_algorithm.deaccelerator();;
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x291,8,data);
+        m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
         break;
@@ -468,14 +481,14 @@ void MainWindow::slot_on_updateLateralOffset(int offset)
     m_lateralOffset = offset;
 }
 
-void MainWindow::slot_on_updateCAN304(QVector<int> vec)
+void MainWindow::slot_on_updateCAN306(QVector<int> vec)
 {
     if(vec.size()<8)
     {
         return;
     }
-    m_vector_CAN304 = vec;
-    switch(m_vector_CAN304[1])
+    //extract control mode
+    switch(vec.at(2)%4)
     {
     case 0:
         m_controlMode = Local;
@@ -492,37 +505,70 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
     default:
         break;
     }
+    //extract engine start
+    if((vec.at(2)/4)%2==1)
+    {
+        m_isEngineStarted = true;
+    }
+    else
+    {
+        m_isEngineStarted = false;
+    }
+    //extract engine stop
+    if((vec.at(2)/8)%2==1)
+    {
+        m_isEngineStarted = false;
+    }
+    else
+    {
+        m_isEngineStarted = true;
+    }
+    //extract engine switch medium
+    if((vec.at(2)/16)%2==1)
+    {
+        m_isEngineswitchMedium = true;
+    }
+    else
+    {
+        m_isEngineStarted = false;
+    }
+    m_bucketUp = vec.at(3);
+    m_bucketDown = vec.at(4);
+    m_tipingBucket = vec.at(5);
+    m_backBucket = vec.at(6);
+    m_turnLeft = vec.at(7);
+
+
 }
 
-void MainWindow::slot_on_updateCAN305(QVector<int> vec)
+void MainWindow::slot_on_updateCAN307(QVector<int> vec)
 {
     if(vec.size()<8)
     {
         return;
     }
-    m_vector_CAN305 = vec;
-    QString str;
-    for(int i=0;i<m_vector_CAN305.size();i++)
-    {
-        str = QString::number(m_vector_CAN305[i]) + " ";
-    }
-    //extract splice angle
-    if(m_vector_CAN305.at(4) == 0)
+    m_turnRight = vec.at(0);
+    m_accelerator = vec.at(1);
+    m_deaccelerator = vec.at(2);
+    m_velocity = vec.at(3);
+    m_engineSpeed = vec.at(4);
+    m_spliceAngle = vec.at(5);
+//    m_waterTemperature = vec.at(6);
+//    m_alarm = vec.at(7);
+    m_mileMeter = vec.at(6)*256 + vec.at(7);
+}
+
+void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
+{
+    if(vec.size()!=11)//receive control from surface
     {
         return;
     }
-    else
+    if(vec.at(0)!=85)//first data is const 0x55
     {
-        m_spliceAngle = m_vector_CAN305.at(4);
+        return;
     }
-    //extract velocity
-    m_velocity = m_vector_CAN305.at(2);
-    //extract engine speed
-    m_engineSpeed = m_vector_CAN305.at(3);
-    //extract oil mass
-    m_oilMass = m_vector_CAN305.at(5);
-    //extract water temperature
-    m_waterTemperature = m_vector_CAN305.at(6);
+    m_surface_control_vec = vec;
 }
 
 //easy to debug:all info shows into the statusBar

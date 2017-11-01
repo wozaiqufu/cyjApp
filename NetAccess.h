@@ -65,6 +65,7 @@ private:
     static const int m_angleStart = 0;
     static const int m_anglel1l2 = 30;
     static const int m_angleDeltaMax = 30;
+    static const int m_angleResolution = 1;
     int m_courseAngle;
 
 };

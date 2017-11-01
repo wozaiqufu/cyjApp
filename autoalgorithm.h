@@ -1,9 +1,3 @@
-/*
-************************************************************************
-************************************************************************
-************************************************************************
-************************************************************************
- * */
 #ifndef AUTOALGORITHM_H
 #define AUTOALGORITHM_H
 #include <QVector>
@@ -43,23 +37,29 @@ public:
     void setAlgorithmType(const int type);
     /***************core*****************************************************/
     void setBeaconRSSIThreshold(const int threshold);
-    bool matchBeacon();
-    void update();
-    int left() const;
-    int right() const;
-    int accelerator() const;
+    bool matchBeacon(QVector<int> vec,const double threshold);
+    void matchMile();//using m_mile_calib generate acc left and right
+    int calibMile();//using m_beaconIndex get mile in beacon.txt
+    void update();//mainwindow slot_on_maintimer_timeout triggers when time out
+    int left() const;//returns control left
+    int right() const;//returns control right
+    int accelerator() const;//returns control acc
     int deaccelerator() const;
+//  double *beaconLength(QVector<int> vec1, QVector<int> vec2);
+
 signals:
     void sig_statusTable(QString);
 private:
     int getBeaconIndex() const;
 //    QByteArray m_beaconLength;
     QVector<int> beaconLength(const int delta);
+    QVector<int> Pro_binary(QVector<int> vec) const;
 public slots:
     //if control mode is Auto,receive SICK data
     void slot_on_updateControlMode(bool isAuto);
     void slot_on_updateSICKDIS(QVector<int> vec);
     void slot_on_updateSICKRSSI(QVector<int> vec);
+    void slot_on_updateMile(int mile);
 private:
     QFile m_pathFile;
     QFile m_beaconFile;
@@ -71,17 +71,23 @@ private:
     QList <Beacon> m_beaconAndMile;//key:left and right beacon width find:mile(calibrated)
     StageType m_stage;
     AlgorithmType m_type;
+    int m_mileDeltaCalib;
     QTextStream m_beaconTextStream;
     QTextStream m_pathTextStream;
     int m_beaconRSSIThreshold;
+    double m_beaconMatchThreshold;
     int m_left;
     int m_right;
     int m_accelerator;
     int m_deaccelerator;
     int m_mile;
+    int m_mile_calib;
+    int m_beaconMatchPre;
+    int m_beaconMatchPost;
+    int m_beaconIndex;
     static const int m_angleMax = 30;
-    static const int m_acceleratorMax = 100;
     static const double m_Angle_degree2Radian = 0.0174532925;
+    static const int m_acceleratorMax = 100;
 };
 
 #endif // AUTOALGORITHM_H

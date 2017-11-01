@@ -32,13 +32,14 @@ signals:
     void sig_informDirection(int);
     void sig_informInfo2surface(QVector<int> vec);
     void sig_autoInfo2Algorithm(bool);
+    void sig_informAlgrithmMile(int);
     void finished();
     void sig_statusTable(QString);
 private slots:
     void slot_on_connectSICK();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
-    void slot_on_initCAN();
+    //void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
     void slot_on_sendFrame2();
@@ -55,8 +56,9 @@ public slots:
     void slot_on_updateStatusTable(QString qstr);
     void slot_on_updateCourseAngle(int angle);
     void slot_on_updateLateralOffset(int offset);
-    void slot_on_updateCAN304(QVector<int> vec);
-    void slot_on_updateCAN305(QVector<int> vec);
+    void slot_on_updateCAN306(QVector<int> vec);
+    void slot_on_updateCAN307(QVector<int> vec);
+    void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
     NetAccess_SICK m_sickObj;
@@ -69,10 +71,8 @@ private:
     QThread m_thread_CAN;
     QTimer m_timer_main;
     QTimer m_timer_surface;
-    QVector<int> m_vector_CAN304;
-    QVector<int> m_vector_CAN305;
     /*
-     * vehicle states to ground
+     * vehicle states to surface
 *****************************/
     Direction m_direction;
     bool m_isNeutralGear;
@@ -97,8 +97,9 @@ private:
     int m_velocity;
     int m_engineSpeed;
     int m_spliceAngle;
-    int m_oilMass;
     int m_waterTemperature;
+    int m_alarm;
+    int m_mileMeter;//in cm
     /*
      *for control algorithm use
 *****************************/
@@ -111,6 +112,11 @@ private:
 *****************************/
     int _light;
     bool _CANReady;
+
+    /**receive surface control
+*****************************/
+    QVector<int> m_surface_control_vec;
+
 };
 
 #endif // MAINWINDOW_H
