@@ -305,7 +305,6 @@ bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
             {
                 ++count_Length;
             }
-
         }
         if(count_Length == 2)
         {
