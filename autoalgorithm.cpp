@@ -293,10 +293,27 @@ int autoAlgorithm::calibMile()
 
 bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
 {
-    //yanbo modifying
+    QVector<int> test_beacon = vec;
+    int count_Length = 0;
+    int relative_error = 0;
+    for(int i = 0; i < m_beaconAndMile.size(); ++i)
+    {
+        for(int j = 0; j < test_beacon.size(); ++j)
+        {
+            relative_error = abs((test_beacon.at(j) - m_beaconAndMile.at(i).width_left))/test_beacon.at(j);
+            if(relative_error < threshold)
+            {
+                ++count_Length;
+            }
 
-    //if success
-    //m_beaconIndex = index;
+        }
+        if(count_Length == 2)
+        {
+            m_beaconIndex = i;
+            return true;
+            break;
+        }
+    }
 }
 
 void autoAlgorithm::update()
