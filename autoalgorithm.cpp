@@ -1,7 +1,7 @@
 #include "autoalgorithm.h"
 #include <QtCore>
 #include <QDebug>
-
+//
 autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
