@@ -33,25 +33,24 @@ public:
     bool saveData(QVector<int> vec,const QString fileName);
     bool closeFile(const QString fileName);
     bool initReading(const QString fileName);
+    bool loadBeaconData();
     bool loadData();
+    void setStageType(StageType type);
     void setAlgorithmType(const int type);
-    /***************core*****************************************************/
     void setBeaconRSSIThreshold(const int threshold);
-    bool matchBeacon(const QVector<int> &vec,const double threshold);
-    void matchMile();//using m_mile_calib generate acc left and right
-    int calibMile();//using m_beaconIndex get mile in beacon.txt
     void update();//mainwindow slot_on_maintimer_timeout triggers when time out
     int left() const;//returns control left
     int right() const;//returns control right
     int accelerator() const;//returns control acc
     int deaccelerator() const;
-//  double *beaconLength(QVector<int> vec1, QVector<int> vec2);
-
 signals:
     void sig_statusTable(QString);
 private:
+    /***************core*****************************************************/
     int getBeaconIndex() const;
-//    QByteArray m_beaconLength;
+    bool matchBeacon(const QVector<int> &vec,const double threshold);
+    void matchMile();//using m_mile_calib generate acc left and right
+    int calibMile();//using m_beaconIndex get mile in beacon.txt
     QVector<int> beaconLength(const int delta);
     QVector<int> Pro_binary(QVector<int> vec) const;
 public slots:
@@ -63,15 +62,18 @@ public slots:
 private:
     QFile m_pathFile;
     QFile m_beaconFile;
+    QFile m_beaconInfoFile;
     bool m_isAuto;
     QVector<int> m_SICKdata;
     QVector<int> m_SICKRSSI;
     QVector<int> m_beaconLength;
+    QList <int> m_beacon;//beacon length actual
     QMap <int,controlCommand> m_trackMap;//memory data are loaded here:key:disp find:control command
     QList <Beacon> m_beaconAndMile;//key:left and right beacon width find:mile(calibrated)
-    StageType m_stage;
-    AlgorithmType m_type;
+    StageType m_stage;//teach mode or auto mode
+    AlgorithmType m_type;//PID or TrackMemory
     int m_mileDeltaCalib;
+    QTextStream m_beaconInfoTextStream;
     QTextStream m_beaconTextStream;
     QTextStream m_pathTextStream;
     int m_beaconRSSIThreshold;

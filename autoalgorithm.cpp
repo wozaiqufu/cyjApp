@@ -21,6 +21,7 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
 {
     m_pathFile.setFileName("path.txt");
     m_beaconFile.setFileName("beacon.txt");
+    m_beaconInfoFile.setFileName("beaconRaw.txt");
 }
 
 int autoAlgorithm::getBeaconIndex() const
@@ -120,6 +121,11 @@ bool autoAlgorithm::closeFile(const QString fileName)
         m_beaconFile.close();
         return true;
     }
+    else if(fileName=="beaconRaw.txt")
+    {
+        m_beaconInfoFile.flush();
+        m_beaconInfoFile.close();
+    }
     else
         return false;
 }
@@ -147,8 +153,35 @@ bool autoAlgorithm::initReading(const QString fileName)
         m_beaconTextStream.setDevice(&m_beaconFile);
         return true;
     }
+    else if(fileName=="beaconRaw.txt")
+    {
+        if(!m_beaconInfoFile.open(QIODevice::ReadOnly))
+        {
+            emit sig_statusTable("can not open beaconRaw.txt for reading!");
+            return false;
+        }
+        m_beaconInfoTextStream.setDevice(&m_beaconInfoFile);
+        return true;
+    }
     else
         return false;
+}
+
+bool autoAlgorithm::loadBeaconData()
+{
+    initReading("beaconRaw.txt");
+    while(!m_beaconInfoTextStream.atEnd())
+    {
+        bool ok;
+        QByteArray line = m_pathFile.readLine();
+        int data =  line.toInt(&ok,10);
+        if(!ok)
+        {
+            emit sig_statusTable("loadBeaconData:data Error!");
+            break;
+        }
+        m_beacon.append(data);
+    }
 }
 
 //loadData:beacon.txt and path.txt into
@@ -256,6 +289,11 @@ bool autoAlgorithm::loadData()
         }
     }
     return false;
+}
+
+void autoAlgorithm::setStageType(autoAlgorithm::StageType type)
+{
+    m_stage = type;
 }
 
 void autoAlgorithm::setAlgorithmType(const int type)
