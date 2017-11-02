@@ -291,17 +291,16 @@ int autoAlgorithm::calibMile()
     m_mileDeltaCalib = m_beaconAndMile.at(m_beaconIndex).mile - m_mile;
 }
 
-bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
+bool autoAlgorithm::matchBeacon(const QVector<int> &vec,const double threshold)
 {
-    QVector<int> test_beacon = vec;//
     int count_Length = 0;
-    int relative_error = 0;
+    double relative_error = 0.0;
     for(int i = 0; i < m_beaconAndMile.size(); ++i)
     {
-        for(int j = 0; j < test_beacon.size(); ++j)
+        for(int j = 0; j < vec.size(); ++j)
         {
-            relative_error = abs((test_beacon.at(j) - m_beaconAndMile.at(i).width_left))/test_beacon.at(j);
-            if(relative_error < threshold)
+            relative_error = static_cast<double>(abs((vec.at(j) - m_beaconAndMile.at(i).width_left))/m_beaconAndMile.at(i).width_left);
+            if(relative_error <= threshold)
             {
                 ++count_Length;
             }
@@ -310,9 +309,9 @@ bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
         {
             m_beaconIndex = i;
             return true;
-            break;
         }
     }
+    return false;
 }
 
 void autoAlgorithm::update()

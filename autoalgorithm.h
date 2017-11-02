@@ -37,7 +37,7 @@ public:
     void setAlgorithmType(const int type);
     /***************core*****************************************************/
     void setBeaconRSSIThreshold(const int threshold);
-    bool matchBeacon(QVector<int> vec,const double threshold);
+    bool matchBeacon(const QVector<int> &vec,const double threshold);
     void matchMile();//using m_mile_calib generate acc left and right
     int calibMile();//using m_beaconIndex get mile in beacon.txt
     void update();//mainwindow slot_on_maintimer_timeout triggers when time out
