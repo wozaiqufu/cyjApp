@@ -293,7 +293,7 @@ int autoAlgorithm::calibMile()
 
 bool autoAlgorithm::matchBeacon(QVector<int> vec,const double threshold)
 {
-    QVector<int> test_beacon = vec;
+    QVector<int> test_beacon = vec;//
     int count_Length = 0;
     int relative_error = 0;
     for(int i = 0; i < m_beaconAndMile.size(); ++i)
