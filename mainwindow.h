@@ -3,11 +3,10 @@
 
 #include <QMainWindow>
 #include <QTimer>
-#include <QMutex>
 #include <QTableWidget>
 #include <QThread>
-#include "NetAccess.h"
-#include "canobj.h"
+#include "SICK.h"
+//#include "CAN.h"
 #include "surfacecommunication.h"
 #include "autoalgorithm.h"
 
@@ -39,15 +38,15 @@ private slots:
     void slot_on_connectSICK();
     void slot_on_requestSICK_Permanent();
     void slot_on_requestSICK_PermanentStop();
-    //void slot_on_initCAN();
+    void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
     void slot_on_sendFrame2();
     void slot_on_sendFrame3();
     void slot_on_initSurface();
     void slot_on_mainTimer_timeout();
-    void slot_on_setAlgorithm_PID();
-    void slot_on_setAlgorithm_TrackMemory();
+    void slot_on_setAlgorithm_PID(int state);
+    void slot_on_setAlgorithm_TrackMemory(int state);
     void slot_on_savedata();
     void slot_on_openFile();
     void slot_on_loadData();
@@ -61,8 +60,8 @@ public slots:
     void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
-    NetAccess_SICK m_sickObj;
-    CANobj m_can;
+    SICK m_sickObj;
+   // CAN m_can;
     SurfaceCommunication m_surfaceComm;
     autoAlgorithm m_algorithm;
     QTimer m_timer_SICK;

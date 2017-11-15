@@ -1,296 +1,17 @@
 #include "autoalgorithm.h"
+#include "pid.h"
+#include "trackmemory.h"
 #include <QtCore>
 #include <QDebug>
-//
+
 autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
-  m_type(PID),
-  m_mileDeltaCalib(0),
-  m_beaconRSSIThreshold(240),
-  m_beaconMatchThreshold(0.5),
-  m_left(0),
-  m_right(0),
-  m_accelerator(0),
-  m_deaccelerator(0),
-  m_mile(0),
-  m_mile_calib(0),
-  m_beaconIndex(0),
-  m_beaconMatchPre(0),
-  m_beaconMatchPost(0)
+  m_type(PIDType)
 {
-    m_pathFile.setFileName("path.txt");
-    m_beaconFile.setFileName("beacon.txt");
-    m_beaconInfoFile.setFileName("beaconRaw.txt");
-}
-
-int autoAlgorithm::getBeaconIndex() const
-{
-    return 0;
-}
-
-bool autoAlgorithm::initWriting(const QString fileName)
-{
-    if(fileName=="beacon.txt")
-    {
-        if(!m_beaconFile.open(QIODevice::Text|QIODevice::WriteOnly))
-        {
-            emit sig_statusTable("can not open Beacon file for writing!");
-            return false;
-        }
-        m_beaconTextStream.setDevice(&m_beaconFile);
-        return true;
-    }
-    else if(fileName=="path.txt")
-    {
-        if (!m_pathFile.open(QIODevice::Text|QIODevice::WriteOnly))
-        {
-            emit sig_statusTable("can not open path file for writing!");
-            return false;
-        }
-        m_pathTextStream.setDevice(&m_pathFile);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool autoAlgorithm::saveData(QVector<int> vec,const QString fileName)
-{
-    if(fileName=="path.txt")
-    {
-        int numEachLine = vec.at(0);
-        if(numEachLine!=(vec.size()-1))
-        {
-            emit sig_statusTable("saveData to path.txt:vector Error!");
-            return false;
-        }
-        for(int i=0;i<vec.size();i++)
-        {
-            if(i==0)
-            {
-                 m_pathTextStream<<vec.at(i)<<"#";
-            }
-            else
-            {
-                 m_pathTextStream<<vec.at(i)<<",";
-            }
-        }
-        //m_textStream<<"\n";
-         m_pathTextStream<<endl;
-        return true;
-    }
-    else if(fileName=="beacon.txt")
-    {
-        int numEachLine = vec.at(0);
-        if(numEachLine!=(vec.size()-1))
-        {
-            emit sig_statusTable("saveData to beacon.txt:vector Error!");
-            return false;
-        }
-        for(int i=0;i<vec.size();i++)
-        {
-            if(i==0)
-            {
-                 m_beaconTextStream<<vec.at(i)<<"#";
-            }
-            else
-            {
-                 m_beaconTextStream<<vec.at(i)<<",";
-            }
-        }
-        //m_textStream<<"\n";
-         m_beaconTextStream<<endl;
-        return true;
-    }
-    else
-        return false;
-}
-
-bool autoAlgorithm::closeFile(const QString fileName)
-{
-    if(fileName=="path.txt")
-    {
-        m_pathFile.flush();
-        m_pathFile.close();
-        return true;
-    }
-    else if(fileName=="beacon.txt")
-    {
-        m_beaconFile.flush();
-        m_beaconFile.close();
-        return true;
-    }
-    else if(fileName=="beaconRaw.txt")
-    {
-        m_beaconInfoFile.flush();
-        m_beaconInfoFile.close();
-    }
-    else
-        return false;
-}
-
-bool autoAlgorithm::initReading(const QString fileName)
-{
-
-    if(fileName=="path.txt")
-    {
-        if(!m_pathFile.open(QIODevice::ReadOnly))
-        {
-            emit sig_statusTable("can not open file for reading!");
-            return false;
-        }
-        m_pathTextStream.setDevice(&m_pathFile);
-        return true;
-    }
-    else if(fileName=="beacon.txt")
-    {
-        if(!m_beaconFile.open(QIODevice::ReadOnly))
-        {
-            emit sig_statusTable("can not open file for reading!");
-            return false;
-        }
-        m_beaconTextStream.setDevice(&m_beaconFile);
-        return true;
-    }
-    else if(fileName=="beaconRaw.txt")
-    {
-        if(!m_beaconInfoFile.open(QIODevice::ReadOnly))
-        {
-            emit sig_statusTable("can not open beaconRaw.txt for reading!");
-            return false;
-        }
-        m_beaconInfoTextStream.setDevice(&m_beaconInfoFile);
-        return true;
-    }
-    else
-        return false;
-}
-
-bool autoAlgorithm::loadBeaconData()
-{
-    initReading("beaconRaw.txt");
-    while(!m_beaconInfoTextStream.atEnd())
-    {
-        bool ok;
-        QByteArray line = m_pathFile.readLine();
-        int data =  line.toInt(&ok,10);
-        if(!ok)
-        {
-            emit sig_statusTable("loadBeaconData:data Error!");
-            break;
-        }
-        m_beacon.append(data);
-    }
 }
 
 //loadData:beacon.txt and path.txt into
-bool autoAlgorithm::loadData()
-{
-    initReading("path.txt");
-    initReading("beacon.txt");
-    while(!m_pathTextStream.atEnd())
-    {
-        controlCommand contr;
-        int disp = 0;
-        int index = 0;
-        bool ok;
-        QByteArray line = m_pathFile.readLine();
-        qDebug()<<"line:"<<line;
-        QByteArray dataNum = line.mid(index,line.indexOf("#",index)-index);
-        emit sig_statusTable("data num each line is:"+QString(dataNum));
-        index = line.indexOf("#",index) + 1;
-        int iDataNum = dataNum.toInt(&ok,10);
-        if(ok!=true)
-        {
-            emit sig_statusTable("loadData:dataNum Error!");
-            return false;
-        }
-        for(int i=0;i<iDataNum;i++)
-        {
-            QByteArray bData = line.mid(index,line.indexOf(",",index)-index);
-            emit sig_statusTable(QString::number(i) +"th data is :"+QString(bData));
-            int iData = bData.toInt(&ok,10);
-            if(ok!=true)
-            {
-                emit sig_statusTable("loadData:iDataNum");
-                return false;
-            }
-            switch(i)
-            {
-            case 0:
-                disp = iData;
-                break;
-            case 1:
-                contr.acc = iData;
-                break;
-            case 2:
-                contr.left = iData;
-            case 3:
-                contr.right = iData;
-                break;
-            default:
-                break;
-            }
-            m_trackMap.insert(disp,contr);
-            index = line.indexOf(",",index) + 1;
-        }
-    }
-    m_pathFile.close();
-
-    while(!m_beaconTextStream.atEnd())
-    {
-        Beacon beacon;
-        int index = 0;
-        bool ok;
-        QByteArray line = m_beaconFile.readLine();
-        qDebug()<<"beacon line:"<<line;
-        QByteArray dataNum = line.mid(index,line.indexOf("#",index)-index);
-        emit sig_statusTable("data num each line is:"+QString(dataNum));
-        index = line.indexOf("#",index) + 1;
-        int iDataNum = dataNum.toInt(&ok,10);
-        if(ok!=true)
-        {
-            emit sig_statusTable("loadData:dataNum Error!");
-            return false;
-        }
-        for(int i=0;i<iDataNum;i++)
-        {
-            QByteArray bData = line.mid(index,line.indexOf(",",index)-index);
-            emit sig_statusTable(QString::number(i) +"th data is :"+QString(bData));
-            int iData = bData.toInt(&ok,10);
-            if(ok!=true)
-            {
-                emit sig_statusTable("loadData:iDataNum");
-                return false;
-            }
-            switch(i)
-            {
-            case 0:
-                beacon.width_left = iData;
-                break;
-            case 1:
-                beacon.width_right = iData;
-                break;
-            case 2:
-                beacon.mile = iData;
-                break;
-            default:
-                break;
-            }
-            index = line.indexOf(",",index) + 1;
-    }
-        m_beaconAndMile.append(beacon);
-        for(int i=0;i<m_beaconAndMile.size();i++)
-        {
-             qDebug()<<"m_beaconAndMile left:"<<m_beaconAndMile.at(i).width_left;
-             qDebug()<<"m_beaconAndMile right:"<<m_beaconAndMile.at(i).width_right;
-             qDebug()<<"m_beaconAndMile mile:"<<m_beaconAndMile.at(i).mile;
-        }
-    }
-    return false;
-}
-
 void autoAlgorithm::setStageType(autoAlgorithm::StageType type)
 {
     m_stage = type;
@@ -301,137 +22,34 @@ void autoAlgorithm::setAlgorithmType(const int type)
     switch(type)
     {
     case 0:
-        m_type = PID;
+        m_type = PIDType;
         break;
     case 1:
-        m_type = TrackMemory;
+        m_type = TrackMemoryType;
         break;
     default:
         break;
     }
 }
 
-void autoAlgorithm::matchMile()
-{
-    int key = 0;
-    m_mile_calib = m_mile + m_mileDeltaCalib;
-    key = m_trackMap.lowerBound(m_mile_calib).key();
-    if(m_trackMap.contains(key))
-    {
-        m_accelerator = m_trackMap[key].acc;
-        m_left = m_trackMap[key].left;
-        m_right = m_trackMap[key].right;
-    }
-}
-
-int autoAlgorithm::calibMile()
-{
-    m_mileDeltaCalib = m_beaconAndMile.at(m_beaconIndex).mile - m_mile;
-}
-
-bool autoAlgorithm::matchBeacon(const QVector<int> &vec,const double threshold)
-{
-    int count_Length = 0;
-    double relative_error = 0.0;
-    for(int i = 0; i < m_beaconAndMile.size(); ++i)
-    {
-        for(int j = 0; j < vec.size(); ++j)
-        {
-            relative_error = static_cast<double>(abs((vec.at(j) - m_beaconAndMile.at(i).width_left))/m_beaconAndMile.at(i).width_left);
-            if(relative_error <= threshold)
-            {
-                ++count_Length;
-            }
-        }
-        if(count_Length == 2)
-        {
-            m_beaconIndex = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-void autoAlgorithm::update()
-{
-    if(matchBeacon(beaconLength(m_beaconRSSIThreshold),m_beaconMatchThreshold))
-    {
-        m_beaconMatchPre = m_beaconMatchPost;
-        m_beaconMatchPost = 1;
-    }
-    else
-    {
-        m_beaconMatchPre = m_beaconMatchPost;
-        m_beaconMatchPost = 0;
-    }
-    switch(m_beaconMatchPost-m_beaconMatchPre)
-    {
-    case -1:
-    {
-        calibMile();
-        matchMile();
-        break;
-    }
-    case 0:
-    {
-        matchMile();
-        break;
-    }
-    case 1:
-    {
-        matchMile();
-        break;
-    }
-    default:break;
-    }
-}
-
 int autoAlgorithm::left() const
 {
-    if(m_left<=m_angleMax)
-    {
-        return m_left;
-    }
-    else
-    {
-        return m_angleMax;
-    }
+    return -1;
 }
 
 int autoAlgorithm::right() const
 {
-    if(m_right<=m_angleMax)
-    {
-        return m_right;
-    }
-    else
-    {
-        return m_angleMax;
-    }
+     return -1;
 }
 
 int autoAlgorithm::accelerator() const
 {
-    if(m_accelerator<=m_acceleratorMax)
-    {
-        return m_accelerator;
-    }
-    else
-    {
-        return m_acceleratorMax;
-    }
+     return -1;
 }
 
 int autoAlgorithm::deaccelerator() const
 {
-    if(m_deaccelerator<=m_acceleratorMax)
-    {
-        return m_deaccelerator;
-    }
-    else
-    {
-        return m_acceleratorMax;
-    }
+     return -1;
 }
 
 void autoAlgorithm::slot_on_updateControlMode(bool isAuto)
@@ -469,133 +87,10 @@ void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
     m_SICKRSSI = vec;
     //qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
    // qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
-    qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
+    //qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
 }
 
 void autoAlgorithm::slot_on_updateMile(int mile)
 {
-    m_mile = mile;
-}
-
-QVector<int> autoAlgorithm::beaconLength(const int delta)
-{
-    QVector<int> binary_vec;
-    for(int ix = 0;ix < m_SICKRSSI.size(); ++ix)
-    {
-        if(m_SICKRSSI[ix] > delta)
-            binary_vec.push_back(1);
-        else
-            binary_vec.push_back(0);
-    }
-    //qDebug()<<"before Pro binary_vec is :"<<binary_vec;
-    binary_vec = Pro_binary(binary_vec);
-    //qDebug()<<"after Pro binary_vec is :"<<binary_vec;
-    //qDebug()<<"the dist is :"<<m_SICKdata;
-    QVector<int> pos01_binary_vec ;//index of "01"
-    QVector<int> pos10_binary_vec ;//index of "10"
-    if(binary_vec.at(0) == 1)
-    {
-        pos01_binary_vec.push_back(0);
-    }
-    for(int ix = 0;ix < binary_vec.size() -1; ++ix)
-    {
-        int RSSIX = binary_vec.at(ix+1)- binary_vec.at(ix);
-        if(RSSIX == 1)
-        {
-            pos01_binary_vec.push_back(ix + 1) ;
-        }
-        else if(RSSIX == -1)
-        {
-            pos10_binary_vec.push_back(ix) ;
-        }
-    }
-
-    if(binary_vec.last() == 1)
-    {
-        pos10_binary_vec.push_back(binary_vec.size()-1) ;
-    }
-    qDebug()<<"the pos of 01 in RSSI is :"<<pos01_binary_vec;
-    qDebug()<<"the pos of 10 in RSSI is :"<<pos10_binary_vec;
-    //angle = pos10_binary_vec - pos10_binary_vec ;
-    m_beaconLength.clear();
-    if(pos01_binary_vec.size() == pos10_binary_vec.size())
-    {
-        int dist1_beacon = 0;
-        int dist2_beacon = 0;
-        for(int ix = 0;ix < pos10_binary_vec.size(); ++ix)
-        {
-            double angle_num = pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix);
-            if(angle_num > 2)
-            //qDebug()<<"start Length";
-            dist1_beacon = m_SICKdata.at(pos01_binary_vec.at(ix));
-            dist2_beacon = m_SICKdata.at(pos10_binary_vec.at(ix));
-            double angle_beacon = (pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix)) * m_Angle_degree2Radian;
-            qDebug()<<"dist1_beacon "<<dist1_beacon;
-            qDebug()<<"dist2_beacon "<<dist2_beacon;
-            qDebug()<<"angle_beacon "<<angle_beacon;
-            //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
-            int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
-            if(temp3 >0)
-            {
-                double angle_beacon = angle_num * m_Angle_degree2Radian * 0.5;
-                int temp1 = pos01_binary_vec.at(ix);
-                int dist1_beacon = m_SICKdata[temp1];
-                int temp2 = pos10_binary_vec.at(ix);
-                int dist2_beacon = m_SICKdata[temp2];
-                int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
-                qDebug()<<"dist1_beacon "<<dist1_beacon;
-                qDebug()<<"dist2_beacon "<<dist2_beacon;
-                qDebug()<<"angle_beacon "<<angle_beacon;
-                m_beaconLength.push_back(temp3);
-            }
-            //qDebug()<<"cos of angle_beacon "<<cos(angle_beacon);
-        }
-    }
-    return m_beaconLength ;
-
-}
-
-QVector<int> autoAlgorithm::Pro_binary(QVector<int> vec) const
-{
-    QVector<int> Pro_vec = vec;
-    QVector<int> expansion_vec ;
-    QVector<int> corrosion_vec ;
-    //expansion
-    if(Pro_vec.at(0)+Pro_vec.at(1))
-    {
-        expansion_vec.push_back(1);
-    }
-    else
-    {
-        expansion_vec.push_back(0);
-    }
-    for(int ix = 1; ix < Pro_vec.size()-1; ++ix)
-    {
-        if(Pro_vec.at(ix-1) + Pro_vec.at(ix) + Pro_vec.at(ix+1))
-        {
-            expansion_vec.push_back(1);
-        }
-        else
-        {
-            expansion_vec.push_back(0);
-        }
-    }
-    if(Pro_vec.last() + Pro_vec.at(Pro_vec.size()-2))
-    {
-        expansion_vec.push_back(1);
-    }
-    else
-    {
-        expansion_vec.push_back(0);
-    }
-    //corrosion
-    corrosion_vec.push_back(expansion_vec.at(0) * expansion_vec.at(1));
-    for(int ix = 1; ix < expansion_vec.size()-1; ++ix)
-    {
-        corrosion_vec.push_back(expansion_vec.at(ix-1) * expansion_vec.at(ix) * expansion_vec.at(ix+1));
-    }
-    corrosion_vec.push_back(expansion_vec.last() * expansion_vec.at(expansion_vec.size()-2));
-
-    return corrosion_vec;
-
+    //m_mile = mile;
 }

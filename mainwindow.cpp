@@ -52,8 +52,8 @@ _CANReady(false)
     connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-    connect(ui->pushButton_PID,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_PID()));
-    connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_TrackMemory()));
+    connect(ui->checkBox_pid,SIGNAL(stateChanged(int)),this,SLOT(slot_on_setAlgorithm_PID(int state)));
+    connect(ui->checkBox_trackmemory,SIGNAL(stateChanged(int)),this,SLOT(slot_on_setAlgorithm_TrackMemory(int state)));
     connect(ui->pushButton_openFile,SIGNAL(clicked()),this,SLOT(slot_on_openFile()));
     connect(ui->pushButton_savedata,SIGNAL(clicked()),this,SLOT(slot_on_savedata()));
     connect(ui->pushButton_readData,SIGNAL(clicked()),this,SLOT(slot_on_loadData()));
@@ -117,22 +117,22 @@ void MainWindow::slot_on_requestSICK_PermanentStop()
     emit sig_stopPermanentReq();
 }
 
-/*void MainWindow::slot_on_initCAN()
+void MainWindow::slot_on_initCAN()
 {
-    m_can.moveToThread(&m_thread_CAN);
-    m_timer_CAN.setInterval(5);
-    m_timer_CAN.moveToThread(&m_thread_CAN);
-    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
-    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
-    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
-    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
-    m_can.initCAN(0);
-    //for test only
-    _CANReady = true;
-     //_can8900.CAN_Init(0);
+//    m_can.moveToThread(&m_thread_CAN);
+//    m_timer_CAN.setInterval(5);
+//    m_timer_CAN.moveToThread(&m_thread_CAN);
+//    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
+//    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
+//    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
+//    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
+//    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
+//    m_can.initCAN(0);
+//    //for test only
+//    _CANReady = true;
+//     //_can8900.CAN_Init(0);
 }
-*/
+
 
 void MainWindow::slot_on_initSurface()
 {
@@ -350,7 +350,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = m_surface_control_vec.at(5);
         data[6] = m_surface_control_vec.at(6);
         data[7] = m_surface_control_vec.at(7);
-        m_can.slot_on_sendFrame(0x304,8,data);
+        //m_can.slot_on_sendFrame(0x304,8,data);
         data[0] = m_surface_control_vec.at(8);
         data[1] = m_surface_control_vec.at(9);
         data[2] = m_surface_control_vec.at(10);
@@ -359,12 +359,12 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x305,8,data);
+        //m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
     case Auto:
         {
-        m_algorithm.update();
+        //m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
         data[0] = 0x55;
         data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
@@ -375,7 +375,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = m_surface_control_vec.at(5);
         data[6] = m_surface_control_vec.at(6);
         data[7] = m_algorithm.left();
-        m_can.slot_on_sendFrame(0x304,8,data);
+       // m_can.slot_on_sendFrame(0x304,8,data);
         data[0] = m_algorithm.right();
         data[1] = m_algorithm.accelerator();
         data[2] = m_algorithm.deaccelerator();;
@@ -384,7 +384,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x305,8,data);
+       // m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
         break;
@@ -433,14 +433,14 @@ void MainWindow::slot_on_mainTimer_timeout()
     }
 }
 
-void MainWindow::slot_on_setAlgorithm_PID()
+void MainWindow::slot_on_setAlgorithm_PID(int state)
 {
-    m_algorithm.setAlgorithmType(0);//0 for PID
+    m_algorithm.setAlgorithmType(state);//0 for PID
 }
 
-void MainWindow::slot_on_setAlgorithm_TrackMemory()
+void MainWindow::slot_on_setAlgorithm_TrackMemory(int state)
 {
-    m_algorithm.setAlgorithmType(1);//1 for track memory
+    m_algorithm.setAlgorithmType(state);//1 for track memory
 }
 
 void MainWindow::slot_on_savedata()
@@ -450,25 +450,25 @@ void MainWindow::slot_on_savedata()
     vector.push_back(12);
     vector.push_back(11);
     vector.push_back(16);
-    m_algorithm.saveData(vector,"path.txt");
+    //m_algorithm.saveData(vector,"path.txt");
 }
 
 void MainWindow::slot_on_openFile()
 {
     emit sig_statusTable("slot_on_openFile");
-    m_algorithm.initWriting("path.txt");
-    m_algorithm.initWriting("beacon.txt");
+    //m_algorithm.initWriting("path.txt");
+    //m_algorithm.initWriting("beacon.txt");
 }
 
 void MainWindow::slot_on_loadData()
 {
-    m_algorithm.loadData();
+    //m_algorithm.loadData();
 }
 
 void MainWindow::slot_on_closeFile()
 {
-    m_algorithm.closeFile("path.txt");
-    m_algorithm.closeFile("beacon.txt");
+    //m_algorithm.closeFile("path.txt");
+    //m_algorithm.closeFile("beacon.txt");
 }
 
 void MainWindow::slot_on_updateCourseAngle(int angle)

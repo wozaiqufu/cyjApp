@@ -31,11 +31,11 @@
 #define CAN_EFF_MASK 0x1FFFFFFFU
 #define CAN_ERR_MASK 0x1FFFFFFFU
 
-class CANobj : public QObject
+class CAN : public QObject
 {
     Q_OBJECT
 public:
-    explicit CANobj(QObject *parent = 0);
+    explicit CAN(QObject *parent = 0);
      bool initCAN(const int portIndex);
 signals:
     void sigUpdateCAN306(QVector<int>);

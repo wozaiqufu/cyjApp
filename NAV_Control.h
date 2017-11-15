@@ -3,7 +3,7 @@
 
 #include <QTimer>
 
-#include "NetAccess.h"
+#include "SICK.h"
 #include "CAN_SJA1000.h"
 
 class NAV_Control : public QObject
