@@ -1,2 +1,12 @@
 
 *.4a89b6f
+
+Debug
+x64
+Release
+GeneratedFiles
+cyjApp.sdf
+cyjApp.sln
+cyjApp.v12.suo
+cyjApp.pro.user
+cyjApp.vc*
