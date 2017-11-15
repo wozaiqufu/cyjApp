@@ -9,17 +9,17 @@
 #include <QtNetwork/QHostAddress>
 #include <QMutex>
 
-class SICK : public QObject
+class SICK511 : public QObject
 {
     Q_OBJECT
     public:
         enum Direction{Forward = 0,Backward};//default Forward==0
-        SICK(QObject *parent = 0);
+		SICK511(QObject *parent = 0);
         bool connectSensor();
         //void getMutex(QMutex *mutex);
         void requestSensor(const QString& req);
 
-        ~SICK();
+		~SICK511();
 private:
         void extractDISTData();
         void extractRSSIData();

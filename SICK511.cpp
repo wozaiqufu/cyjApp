@@ -1,9 +1,9 @@
 #include <QtCore>
-#include "SICK.h"
+#include "SICK511.h"
 #include <QDebug>
 
 
-SICK::SICK(QObject* parent)
+SICK511::SICK511(QObject* parent)
     : QObject(parent)
     ,m_address_SICK_forward("192.168.1.50")
     ,m_address_SICK_backward("192.168.1.51")
@@ -20,12 +20,12 @@ SICK::SICK(QObject* parent)
     connect(&m_tcpSocket_backward,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(slot_on_backward_error(QAbstractSocket::SocketError)));
 }
 
-SICK::~SICK()
+SICK511::~SICK511()
 {
 
 }
 
-void SICK::extractDISTData()
+void SICK511::extractDISTData()
 {
     /***********************forward************************************/
     if(m_dataRecieved_forward.isEmpty()){
@@ -119,7 +119,7 @@ void SICK::extractDISTData()
       //qDebug()<<"\n"<<"m_data_backward in decimal:"<<m_data_backward;
 }
 
-void SICK::extractRSSIData()
+void SICK511::extractRSSIData()
 {
     /***********************forward************************************/
     if(m_dataRecieved_forward.isEmpty()){
@@ -214,7 +214,7 @@ void SICK::extractRSSIData()
 }
 
 //calculate course angle
-int SICK::courseAngle()
+int SICK511::courseAngle()
 {
     //qDebug()<<"courseAngle is triggered!";
      //qDebug()<<"m_currentDirection:"<<m_currentDirection;
@@ -386,7 +386,7 @@ int SICK::courseAngle()
 }
 
 //calculate lateral offset use both Caution:if return 2000,no available data!
-int SICK::lateralOffset()
+int SICK511::lateralOffset()
 {
     //qDebug()<<"courseAngle is triggered!";
      //qDebug()<<"m_currentDirection:"<<m_currentDirection;
@@ -500,7 +500,7 @@ int SICK::lateralOffset()
     }
 }
 
-void SICK::slot_on_requestContinousRead()//request permanent diagram
+void SICK511::slot_on_requestContinousRead()//request permanent diagram
 {
     if(m_bIsForwardConnected){
         QString qstr("\x2sEN LMDscandata 1\x3");
@@ -515,7 +515,7 @@ void SICK::slot_on_requestContinousRead()//request permanent diagram
     }
 }
 
-void SICK::slot_on_requestContinousRead_Stop()
+void SICK511::slot_on_requestContinousRead_Stop()
 {
     if(m_bIsForwardConnected){
         QString qstr("\x2sEN LMDscandata 0\x3");
@@ -524,12 +524,12 @@ void SICK::slot_on_requestContinousRead_Stop()
     }
 }
 
-void SICK::slot_on_updateDirection(int direction)
+void SICK511::slot_on_updateDirection(int direction)
 {
     m_currentDirection = static_cast<Direction>(direction);
 }
 
-bool SICK::connectSensor()
+bool SICK511::connectSensor()
 {
     //qDebug()<<"connectSensor is triggered!";
     if(m_bIsForwardConnected){
@@ -570,7 +570,7 @@ bool SICK::connectSensor()
     }
 }
 
-void SICK::requestSensor(const QString& req)
+void SICK511::requestSensor(const QString& req)
 {
     if(!m_tcpSocket_forward.isValid())
     {
@@ -593,7 +593,7 @@ void SICK::requestSensor(const QString& req)
         }
 }
 
-void SICK::slot_on_readMessage_forward(){
+void SICK511::slot_on_readMessage_forward(){
     //QDataStream in(m_tcpSocket);
     //qDebug()<<"slot_on_readMessage is triigerred!";
     m_dataRecieved_forward = m_tcpSocket_forward.readAll();
@@ -605,7 +605,7 @@ void SICK::slot_on_readMessage_forward(){
     emit sigUpdateLateralOffset(lateralOffset());
 }
 
-void SICK::slot_on_readMessage_backward()
+void SICK511::slot_on_readMessage_backward()
 {
     m_dataRecieved_backward = m_tcpSocket_backward.readAll();
     //one data has 2 bytes
@@ -616,13 +616,13 @@ void SICK::slot_on_readMessage_backward()
     emit sigUpdateLateralOffset(lateralOffset());
 }
 
-void SICK::slot_on_forward_error(QAbstractSocket::SocketError)
+void SICK511::slot_on_forward_error(QAbstractSocket::SocketError)
 {
      emit sig_statusTable("forward error:");
      qDebug()<<"backward error:"<<m_tcpSocket_forward.errorString();
 }
 
-void SICK::slot_on_backward_error(QAbstractSocket::SocketError)
+void SICK511::slot_on_backward_error(QAbstractSocket::SocketError)
 {
     emit sig_statusTable("backward error:");
     qDebug()<<"backward error:"<<m_tcpSocket_backward.errorString();

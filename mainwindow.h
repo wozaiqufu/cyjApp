@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <QTableWidget>
 #include <QThread>
-#include "SICK.h"
+#include "SICK511.h"
 //#include "CAN.h"
 #include "surfacecommunication.h"
 #include "autoalgorithm.h"
@@ -24,7 +24,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 private:
-     void initTable();
+     void initStatusTable();
 signals:
     void sig_CAN(ulong id, uchar length, uchar *data);
     void sig_stopPermanentReq();
@@ -60,19 +60,20 @@ public slots:
     void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
-    SICK m_sickObj;
+	SICK511 m_sickObj;
    // CAN m_can;
-    SurfaceCommunication m_surfaceComm;
-    autoAlgorithm m_algorithm;
-    QTimer m_timer_SICK;
-    QThread m_thread_SICK;
-    QTimer m_timer_CAN;
-    QThread m_thread_CAN;
-    QTimer m_timer_main;
-    QTimer m_timer_surface;
-    /*
+    SurfaceCommunication	m_surfaceComm;
+    autoAlgorithm			m_algorithm;
+    QTimer					m_timer_SICK;
+    QThread					m_thread_SICK;
+    QTimer					m_timer_CAN;
+    QThread					m_thread_CAN;
+    QTimer					m_timer_main;
+    QTimer					m_timer_surface;
+    /*************************************************************************
      * vehicle states to surface
-*****************************/
+	 *
+	/*************************************************************************/
     Direction m_direction;
     bool m_isNeutralGear;
     bool m_isBraking;
@@ -99,9 +100,10 @@ private:
     int m_waterTemperature;
     int m_alarm;
     int m_mileMeter;//in cm
-    /*
-     *for control algorithm use
-*****************************/
+	/*************************************************************************
+	* for control algorithm use
+	*
+	/*************************************************************************/
     int m_courseAngle;
     int m_lateralOffset;
     int m_mileMeterPulse;

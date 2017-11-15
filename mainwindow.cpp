@@ -41,7 +41,7 @@ _light(0),
 _CANReady(false)
 {
     ui->setupUi(this);
-    initTable();
+	initStatusTable();
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
     connect(ui->pushButton_3,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_Permanent()));
     connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
@@ -73,7 +73,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::initTable()
+void MainWindow::initStatusTable()
 {
     ui->tableWidget->setColumnCount(2);
     QStringList headers;
