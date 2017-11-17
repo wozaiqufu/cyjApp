@@ -17,7 +17,6 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
 public:
     enum Direction{Forward = 0,Backward};//default Forward==0
     enum ControlMode{Local,Visible,Remote,Auto};//default Local==0
@@ -29,15 +28,16 @@ signals:
     void sig_CAN(ulong id, uchar length, uchar *data);
     void sig_stopPermanentReq();
     void sig_informDirection(int);
+	void sig_2AlgorithmRSSI(QVector<int>);
+	void sig_2AlgorithmDIST(QVector<int>);
     void sig_informInfo2surface(QVector<int> vec);
     void sig_autoInfo2Algorithm(bool);
     void sig_informAlgrithmMile(int);
     void finished();
     void sig_statusTable(QString);
 private slots:
-    void slot_on_connectSICK();
-    void slot_on_requestSICK_Permanent();
-    void slot_on_requestSICK_PermanentStop();
+    void slot_on_initSICK511();
+    void slot_on_stopSICK511();
     void slot_on_initCAN();
     void slot_on_readFrame();
     void slot_on_sendFrame();
@@ -45,22 +45,29 @@ private slots:
     void slot_on_sendFrame3();
     void slot_on_initSurface();
     void slot_on_mainTimer_timeout();
-    void slot_on_setAlgorithm_PID(int state);
-    void slot_on_setAlgorithm_TrackMemory(int state);
+    void slot_on_setAlgorithm();
+	void slot_on_setMode();
     void slot_on_savedata();
     void slot_on_openFile();
     void slot_on_loadData();
     void slot_on_closeFile();
 public slots:
     void slot_on_updateStatusTable(QString qstr);
-    void slot_on_updateCourseAngle(int angle);
-    void slot_on_updateLateralOffset(int offset);
+	void slot_on_updateForwardDIST(QVector<int> vec);
+	void slot_on_updateForwardRSSI(QVector<int> vec);
+	void slot_on_updateBackwardDIST(QVector<int> vec);
+	void slot_on_updateBackwardRSSI(QVector<int> vec);
+    void slot_on_updateForwardCourseAngle(int angle);
+    void slot_on_updateForwardLateralOffset(int offset);
+	void slot_on_updateBackwardCourseAngle(int angle);
+	void slot_on_updateBackwardLateralOffset(int offset);
     void slot_on_updateCAN306(QVector<int> vec);
     void slot_on_updateCAN307(QVector<int> vec);
     void slot_on_surfaceUpdate(QVector<int> vec);
 private:
     Ui::MainWindow *ui;
-	SICK511 m_sickObj;
+	SICK511 m_sick511_f;//Forward SICK511
+	SICK511 m_sick511_b;//Backward SICK511
    // CAN m_can;
     SurfaceCommunication	m_surfaceComm;
     autoAlgorithm			m_algorithm;
@@ -75,12 +82,12 @@ private:
 	 *
 	/*************************************************************************/
     Direction m_direction;
+	ControlMode m_controlMode;
     bool m_isNeutralGear;
     bool m_isBraking;
     bool m_isEmergencyStop;
     bool m_isMainLight;
     bool m_isHorning;
-    ControlMode m_controlMode;
     bool m_isEngineStarted;
     bool m_isEngineswitchMedium;
     bool m_isEarthFault;

@@ -11,10 +11,19 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
 {
 }
 
-//loadData:beacon.txt and path.txt into
-void autoAlgorithm::setStageType(autoAlgorithm::StageType type)
+void autoAlgorithm::setStageType(const int type)
 {
-    m_stage = type;
+	switch (type)
+	{
+	case 0:
+		m_stage = Teach;
+		break;
+	case 1:
+		m_stage = Auto;
+		break;
+	default:
+		break;
+	}
 }
 
 void autoAlgorithm::setAlgorithmType(const int type)

@@ -12,12 +12,12 @@ class autoAlgorithm : public QObject
     Q_OBJECT
 public:
     enum StageType{Teach,Auto};//Teach for saving beacon.txt
-    enum AlgorithmType{PIDType,TrackMemoryType};
+    enum AlgorithmType{PIDType,TrackMemoryType,MixedType};//0,1,2
     explicit autoAlgorithm(QObject *parent = 0);
     /* *
      *public methods called by mainwindow
      * */
-    void    setStageType(StageType type);
+    void    setStageType(const int type);
     void    setAlgorithmType(const int type);
     void    setBeaconRSSIThreshold(const int threshold);
     int     left() const;//returns control left
