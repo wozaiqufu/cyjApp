@@ -32,8 +32,9 @@ public:
     void init(const int rssiThreshold,const int beaconLengthThr,const int accmax,const int accmin,const int angmax,const int angmin);
     QVector<int>  update(int mile, QVector<int> dist, QVector<int> rssi);
     bool          saveData(const QString fileName,QVector<int> vec);
+	bool		  isBeaconLost(QVector<int> dist, QVector<int> rssi);
 private:
-     bool         loadData();
+     bool         loadData(const QString txtName);
      QVector<int> beaconLength(QVector<int> dist,QVector<int> rssi,const int delta);
      QVector<int> Pro_binary(QVector<int> vec) const;//for beaconLength use(111001111 filter 00)
      bool         matchBeacon(const QVector<int> &vec,const double threshold);//m_beaconIndex is updated!
@@ -85,6 +86,14 @@ QVector<int> TrackMemory::update(int mile, QVector<int> dist, QVector<int> rssi)
     return m_Impl->update(mile,dist,rssi);
 }
 
+bool TrackMemory::saveData(const QString fileName, QVector<int> vec)
+{
+	return m_Impl->saveData(fileName, vec);
+}
+bool TrackMemory::isBeaconLost(QVector<int> dist, QVector<int> rssi)
+{
+	return m_Impl->isBeaconLost(dist,rssi);
+}
 TrackMemory::~TrackMemory()
 {
    delete m_Impl;
@@ -106,6 +115,7 @@ TrackMemoryImpl::TrackMemoryImpl()
       m_angmax(80),
       m_angmin(0)
 {
+	//file names
     m_pathFile.setFileName("path.txt");
     m_beaconFile.setFileName("beacon.txt");
     m_beaconRawFile.setFileName("beaconRaw.txt");
@@ -142,6 +152,7 @@ void TrackMemoryImpl::init(const int rssiThreshold,const int beaconLengthThr,con
         return;
     else
         m_angmin = angmin;
+	loadData();
 }
 
 QVector<int> TrackMemoryImpl::update(int mile, QVector<int> dist, QVector<int> rssi)
@@ -174,10 +185,30 @@ QVector<int> TrackMemoryImpl::update(int mile, QVector<int> dist, QVector<int> r
         return matchMile(mile);
         break;
     }
-    default:break;
+	default:
+	{
+		return QVector<int> (0);
+		break;
+	}
     }
 }
 
+bool TrackMemoryImpl::isBeaconLost(QVector<int> dist, QVector<int> rssi)
+{
+	if (matchBeacon(beaconLength(dist, rssi, m_rssiThreshold), m_beaconLengthThreshold))
+	{
+		m_beaconMatchPre = m_beaconMatchPost;
+		m_beaconMatchPost = 1;
+	}
+	else
+	{
+		m_beaconMatchPre = m_beaconMatchPost;
+		m_beaconMatchPost = 0;
+	}
+	if ((m_beaconMatchPost - m_beaconMatchPre) == -1)
+		return true;
+	else return false;
+}
 bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
 {
     if(fileName==m_pathFile.fileName())
@@ -238,7 +269,7 @@ bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
         return false;
 }
 
-bool TrackMemoryImpl::loadData()
+bool TrackMemoryImpl::loadData(const QString txtName)
 {
     //load beacon data:beaconRaw.txt
     QFile file;

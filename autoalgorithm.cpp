@@ -7,10 +7,28 @@
 autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_isAuto(true),
   m_stage(Auto),
-  m_type(PIDType)
+  m_type(PIDType),
+  m_mile(0)
 {
 }
 
+void autoAlgorithm::update()
+{
+	switch (m_stage)
+	{
+	case autoAlgorithm::Teach:
+		p_track->saveData("path.txt", m_mile_acc_deacc_left_right);
+		if (p_track->isBeaconLost(m_SICKdata, m_SICKRSSI))
+		{
+			p_track->saveData("beacon.txt", m_mile_acc_deacc_left_right);
+		}
+		break;
+	case autoAlgorithm::Auto:
+		break;
+	default:
+		break;
+	}
+}
 void autoAlgorithm::setStageType(const int type)
 {
 	switch (type)
@@ -99,7 +117,15 @@ void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
     //qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
 }
 
-void autoAlgorithm::slot_on_updateMile(int mile)
+void autoAlgorithm::slot_on_updateControlInfo(QVector<int> vec)
 {
-    //m_mile = mile;
+	m_mile_acc_deacc_left_right = vec;
+	m_mile = vec.at(0);
+}
+
+bool autoAlgorithm::isCertainMileIncrement(const int mile, const int inc)
+{
+	//10% of m_mileDelta
+	if ((mile - m_mile) <= 0) return false;
+	return ((mile - m_mile) < 0.1*m_mileDelta);
 }

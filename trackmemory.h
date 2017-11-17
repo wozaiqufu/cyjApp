@@ -29,7 +29,12 @@ public:
      * @intput param vec:vec[0]:data length;vec[1]...data
      * */
     bool saveData(const QString fileName,QVector<int> vec);
-
+	/*
+	* whether beacon is lost
+	* @
+	* @output:if beacon is lost,return true
+	* */
+	bool isBeaconLost(QVector<int> dist, QVector<int> rssi);
 private:
     TrackMemoryImpl *m_Impl;
 };

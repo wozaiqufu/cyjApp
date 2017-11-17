@@ -233,7 +233,7 @@ void MainWindow::slot_on_mainTimer_timeout()
 {
     /*
      * UDP to surface
-     * *********************************************/
+     * ************************************************************************/
     QVector<int> vec;
     int data = 0;
      /************1th byte********************/
@@ -335,7 +335,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     vec.push_back(m_alarm);
     emit sig_informInfo2surface(vec);
     /***************surface end*********************/
-/************************************************************************/
+/*****************************************************************************/
     /*
      *notify algorithm
      * *********************************************/
@@ -352,7 +352,7 @@ void MainWindow::slot_on_mainTimer_timeout()
  /************************************************************************/
     /*
      *control
-     * *********************************************/
+     * *******************************************************************/
     switch (m_controlMode)
     {
     case Remote:
@@ -381,7 +381,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         }
     case Auto:
         {
-        //m_algorithm.update();
+        m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
         data[0] = 0x55;
         data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
@@ -404,7 +404,6 @@ void MainWindow::slot_on_mainTimer_timeout()
        // m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
-        break;
     default:
         break;
     }
