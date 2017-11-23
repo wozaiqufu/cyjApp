@@ -3,93 +3,85 @@
 #include <QVector>
 #include <QObject>
 #include <QStringList>
-#include <QTextStream>
-#include <QFile>
-#include <QMap>
 #include <QByteArray>
-
-typedef struct controlCommand
-{
-    int acc;
-    int left;
-    int right;
-}CONTROL;
-
-typedef struct Beacon
-{
-    int width_left;
-    int width_right;
-    int mile;
-}BEACON;
+class TrackMemory;
+class PID;
 
 class autoAlgorithm : public QObject
 {
     Q_OBJECT
 public:
     enum StageType{Teach,Auto};//Teach for saving beacon.txt
-    enum AlgorithmType{PID,TrackMemory};
+    enum AlgorithmType{PIDType,TrackMemoryType,MixedType};//0,1,2
     explicit autoAlgorithm(QObject *parent = 0);
-    bool initWriting(const QString fileName);
-    bool saveData(QVector<int> vec,const QString fileName);
-    bool closeFile(const QString fileName);
-    bool initReading(const QString fileName);
-    bool loadBeaconData();
-    bool loadData();
-    void setStageType(StageType type);
-    void setAlgorithmType(const int type);
-    void setBeaconRSSIThreshold(const int threshold);
-    void update();//mainwindow slot_on_maintimer_timeout triggers when time out
-    int left() const;//returns control left
-    int right() const;//returns control right
-    int accelerator() const;//returns control acc
-    int deaccelerator() const;
+	/*
+	* tells tech mode or auto mode
+	* @input param type :0 for teach mode,1 for auto mode
+	* */
+    void    setStageType(const int type);
+	/*
+	* tells algorithm type is auto mode
+	* @input param type:0 for PID, 1 for trackmemory, 2 for Mixed
+	* */
+    void    setAlgorithmType(const int type);
+	/*
+	* RSSI threshold for beacon recognization 
+	* @input param threshold:RSSI value higher than it is valid
+	* */
+    void    setBeaconRSSIThreshold(const int threshold);
+	/*
+	* update:
+	* if in TEACH MODE,save path.txt and beacon.txt
+	* if in AUTO MODE, update acc, angle according to algorithm type
+	* */
+	void	update();
+	/*
+	* returns final left 
+	* @return turn left command(opposite when backward)
+	* */
+    int     left() const;
+	/*
+	* returns final right
+	* @return turn right command(opposite when backward)
+	* */
+    int     right() const;
+	/*
+	* returns final acc
+	* @return acc command
+	* */
+    int     accelerator() const;
+	/*
+	* returns final deacc
+	* @return deacc command
+	* */
+    int     deaccelerator() const;
+private:
+	/*
+	* increase to certain value specified with inc,return true if succeed
+	* add a noise scale if not increase to (origin+inc) EXACTLY
+	* @return true if succeed
+	* */
+	bool isCertainMileIncrement(const int mile,const int inc);
 signals:
     void sig_statusTable(QString);
-private:
-    /***************core*****************************************************/
-    int getBeaconIndex() const;
-    bool matchBeacon(const QVector<int> &vec,const double threshold);
-    void matchMile();//using m_mile_calib generate acc left and right
-    int calibMile();//using m_beaconIndex get mile in beacon.txt
-    QVector<int> beaconLength(const int delta);
-    QVector<int> Pro_binary(QVector<int> vec) const;
 public slots:
     //if control mode is Auto,receive SICK data
     void slot_on_updateControlMode(bool isAuto);
     void slot_on_updateSICKDIS(QVector<int> vec);
     void slot_on_updateSICKRSSI(QVector<int> vec);
-    void slot_on_updateMile(int mile);
+	void slot_on_updateControlInfo(QVector<int> vec);
 private:
-    QFile m_pathFile;
-    QFile m_beaconFile;
-    QFile m_beaconInfoFile;
-    bool m_isAuto;
-    QVector<int> m_SICKdata;
-    QVector<int> m_SICKRSSI;
-    QVector<int> m_beaconLength;
-    QList <int> m_beacon;//beacon length actual
-    QMap <int,controlCommand> m_trackMap;//memory data are loaded here:key:disp find:control command
-    QList <Beacon> m_beaconAndMile;//key:left and right beacon width find:mile(calibrated)
-    StageType m_stage;//teach mode or auto mode
-    AlgorithmType m_type;//PID or TrackMemory
-    int m_mileDeltaCalib;
-    QTextStream m_beaconInfoTextStream;
-    QTextStream m_beaconTextStream;
-    QTextStream m_pathTextStream;
-    int m_beaconRSSIThreshold;
-    double m_beaconMatchThreshold;
-    int m_left;
-    int m_right;
-    int m_accelerator;
-    int m_deaccelerator;
-    int m_mile;
-    int m_mile_calib;
-    int m_beaconMatchPre;
-    int m_beaconMatchPost;
-    int m_beaconIndex;
-    static const int m_angleMax = 30;
-    static const double m_Angle_degree2Radian = 0.0174532925;
-    static const int m_acceleratorMax = 100;
+    bool            m_isAuto;
+    QVector<int>    m_SICKdata;
+    QVector<int>    m_SICKRSSI;
+	QVector<int>	m_mile_acc_deacc_left_right;//signal from mainwindow
+	int				m_mile_saved;//saved data into path.txt
+	int				m_mile_current;//current mile 
+    StageType       m_stage;//teach mode or auto mode
+    AlgorithmType   m_type;//PID or TrackMemory
+    TrackMemory     *p_track;
+    PID             *p_pid;
+	const int		m_mileDelta = 20;//path.txt mile increment is 20cm
 };
 
 #endif // AUTOALGORITHM_H

@@ -32,6 +32,7 @@ m_waterTemperature(0),
 m_alarm(0),
 m_mileMeter(0),
 /*************************/
+m_direction(Forward),
 m_courseAngle(0),
 m_lateralOffset(0),
 m_mileMeterPulse(0),
@@ -41,10 +42,9 @@ _light(0),
 _CANReady(false)
 {
     ui->setupUi(this);
-    initTable();
-    connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(slot_on_connectSICK()));
-    connect(ui->pushButton_3,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_Permanent()));
-    connect(ui->pushButton_4,SIGNAL(clicked()),this,SLOT(slot_on_requestSICK_PermanentStop()));
+	initStatusTable();
+	connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(slot_on_initSICK511()));
+	connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(slot_on_stopSICK511()));
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
     connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
     connect(ui->pushButton_light1,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
@@ -52,20 +52,44 @@ _CANReady(false)
     connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
-    connect(ui->pushButton_PID,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_PID()));
-    connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_setAlgorithm_TrackMemory()));
+	QButtonGroup* check_group[2];
+	check_group[0] = new QButtonGroup(this);
+	check_group[1] = new QButtonGroup(this);
+	check_group[0]->addButton(ui->checkBox_auto);
+	check_group[0]->addButton(ui->checkBox_teach);
+	check_group[0]->setExclusive(true);
+	check_group[1]->addButton(ui->checkBox_pid);
+	check_group[1]->addButton(ui->checkBox_trackmemory);
+	check_group[1]->addButton(ui->checkBox_mixed);
+	check_group[1]->setExclusive(true);
+
+	connect(ui->checkBox_pid, SIGNAL(clicked()), this, SLOT(slot_on_setAlgorithm()));
+	connect(ui->checkBox_trackmemory, SIGNAL(clicked()), this, SLOT(slot_on_setAlgorithm()));
+	connect(ui->checkBox_mixed, SIGNAL(clicked()), this, SLOT(slot_on_setAlgorithm()));
+	connect(ui->checkBox_teach, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
+	connect(ui->checkBox_auto, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
     connect(ui->pushButton_openFile,SIGNAL(clicked()),this,SLOT(slot_on_openFile()));
     connect(ui->pushButton_savedata,SIGNAL(clicked()),this,SLOT(slot_on_savedata()));
     connect(ui->pushButton_readData,SIGNAL(clicked()),this,SLOT(slot_on_loadData()));
     connect(ui->pushButton_closeFile,SIGNAL(clicked()),this,SLOT(slot_on_closeFile()));
     m_timer_main.start(100);
-    //signals and slots mainwindow and autoAlgorithm
+    //signals:mainwindow,slots:autoAlgorithm
     connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
-    //signals and slots SICK and autoAlgorithm
-    connect(&m_sickObj,SIGNAL(sigUpdateDIST(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKDIS(QVector<int>)));
-    connect(&m_sickObj,SIGNAL(sigUpdataRSSI(QVector<int>)),&m_algorithm,SLOT(slot_on_updateSICKRSSI(QVector<int>)));
-    //signals and slots MainWindow and Algorithm
-    connect(this,SIGNAL(sig_informAlgrithmMile(int)),&m_algorithm,SLOT(slot_on_updateMile(int)));
+    //signals:SICK,slots:autoAlgorithm
+
+	//signals:SICK,slots:mainwindow
+	connect(&m_sick511_f, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateForwardDIST(QVector<int> vec)));
+	connect(&m_sick511_f, SIGNAL(sigUpdataRSSI(QVector<int>)), this, SLOT(slot_on_updateForwardRSSI(QVector<int> vec)));
+	connect(&m_sick511_b, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateBackwardDIST(QVector<int> vec)));
+	connect(&m_sick511_b, SIGNAL(sigUpdataRSSI(QVector<int>)), this, SLOT(slot_on_updateBackwardRSSI(QVector<int> vec)));
+	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
+	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
+	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
+	connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateBackwardLateralOffset(int)));
+    //signals:MainWindow,slots:Algorithm
+	connect(this, SIGNAL(sig_informAlgrithmMile(int)), &m_algorithm, SLOT(slot_on_updateMile(int))); 
+	connect(this, SIGNAL(sig_2AlgorithmRSSI(QVector<int>)), &m_algorithm, SLOT(slot_on_updateSICKRSSI(QVector<int>)));
+	connect(this, SIGNAL(sig_2AlgorithmDIST(QVector<int>)), &m_algorithm, SLOT(slot_on_updateSICKDIS(QVector<int>)));
 }
 
 MainWindow::~MainWindow()
@@ -73,7 +97,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::initTable()
+void MainWindow::initStatusTable()
 {
     ui->tableWidget->setColumnCount(2);
     QStringList headers;
@@ -82,57 +106,50 @@ void MainWindow::initTable()
     //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     //connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
-    connect(&m_sickObj,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+	connect(&m_sick511_f, SIGNAL(sig_statusTable(QString)), this, SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_algorithm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_surfaceComm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
     connect(this,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
 }
 
-void MainWindow::slot_on_connectSICK()
+void MainWindow::slot_on_initSICK511()
 {
-    m_sickObj.connectSensor();//if failed,sigal will be sent and this->slot_on_tcpSocketError triggered
-    //m_timer_SICK.setInterval(2000);
+	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
+	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
+	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
+	connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateBackwardLateralOffset(int)));
+	if (m_sick511_f.init("forward", "192.168.1.50", 2111))
+	{
+		m_sick511_f.continuousStart();
+	}
+
+	if (m_sick511_b.init("backward", "192.168.1.51", 2111))
+	{
+		m_sick511_b.continuousStart();
+	}
 }
 
-void MainWindow::slot_on_requestSICK_Permanent()
-{
-//    m_sickObj.moveToThread(&m_thread_SICK);
-//    connect(&m_thread_SICK,SIGNAL(started()),&m_sickObj,SLOT(slot_on_requestContinousRead()));
-//    connect(&m_thread_SICK,SIGNAL(finished()),&m_thread_SICK,SLOT(deleteLater()));
-//    connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
-//    connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
-//    connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
-//    connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
-//    m_thread_SICK.start(QThread::HighestPriority);
-
-    m_sickObj.slot_on_requestContinousRead();
-    connect(this,SIGNAL(sig_stopPermanentReq()),&m_sickObj,SLOT(slot_on_requestContinousRead_Stop()));
-    connect(this,SIGNAL(sig_informDirection(int)),&m_sickObj,SLOT(slot_on_updateDirection(int)));
-    connect(&m_sickObj,SIGNAL(sigUpdateCourseAngle(int)),this,SLOT(slot_on_updateCourseAngle(int)));
-    connect(&m_sickObj,SIGNAL(sigUpdateLateralOffset(int)),this,SLOT(slot_on_updateLateralOffset(int)));
-}
-
-void MainWindow::slot_on_requestSICK_PermanentStop()
+void MainWindow::slot_on_stopSICK511()
 {
     emit sig_stopPermanentReq();
 }
 
-/*void MainWindow::slot_on_initCAN()
+void MainWindow::slot_on_initCAN()
 {
-    m_can.moveToThread(&m_thread_CAN);
-    m_timer_CAN.setInterval(5);
-    m_timer_CAN.moveToThread(&m_thread_CAN);
-    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
-    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
-    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
-    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
-    m_can.initCAN(0);
-    //for test only
-    _CANReady = true;
-     //_can8900.CAN_Init(0);
+//    m_can.moveToThread(&m_thread_CAN);
+//    m_timer_CAN.setInterval(5);
+//    m_timer_CAN.moveToThread(&m_thread_CAN);
+//    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
+//    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
+//    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
+//    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
+//    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
+//    m_can.initCAN(0);
+//    //for test only
+//    _CANReady = true;
+//     //_can8900.CAN_Init(0);
 }
-*/
+
 
 void MainWindow::slot_on_initSurface()
 {
@@ -216,7 +233,7 @@ void MainWindow::slot_on_mainTimer_timeout()
 {
     /*
      * UDP to surface
-     * *********************************************/
+     * ************************************************************************/
     QVector<int> vec;
     int data = 0;
      /************1th byte********************/
@@ -318,7 +335,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     vec.push_back(m_alarm);
     emit sig_informInfo2surface(vec);
     /***************surface end*********************/
-/************************************************************************/
+/*****************************************************************************/
     /*
      *notify algorithm
      * *********************************************/
@@ -335,7 +352,7 @@ void MainWindow::slot_on_mainTimer_timeout()
  /************************************************************************/
     /*
      *control
-     * *********************************************/
+     * *******************************************************************/
     switch (m_controlMode)
     {
     case Remote:
@@ -350,7 +367,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = m_surface_control_vec.at(5);
         data[6] = m_surface_control_vec.at(6);
         data[7] = m_surface_control_vec.at(7);
-        m_can.slot_on_sendFrame(0x304,8,data);
+        //m_can.slot_on_sendFrame(0x304,8,data);
         data[0] = m_surface_control_vec.at(8);
         data[1] = m_surface_control_vec.at(9);
         data[2] = m_surface_control_vec.at(10);
@@ -359,7 +376,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x305,8,data);
+        //m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
     case Auto:
@@ -375,7 +392,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = m_surface_control_vec.at(5);
         data[6] = m_surface_control_vec.at(6);
         data[7] = m_algorithm.left();
-        m_can.slot_on_sendFrame(0x304,8,data);
+       // m_can.slot_on_sendFrame(0x304,8,data);
         data[0] = m_algorithm.right();
         data[1] = m_algorithm.accelerator();
         data[2] = m_algorithm.deaccelerator();;
@@ -384,10 +401,9 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x305,8,data);
+       // m_can.slot_on_sendFrame(0x305,8,data);
         break;
         }
-        break;
     default:
         break;
     }
@@ -433,52 +449,119 @@ void MainWindow::slot_on_mainTimer_timeout()
     }
 }
 
-void MainWindow::slot_on_setAlgorithm_PID()
+void MainWindow::slot_on_setAlgorithm()
 {
-    m_algorithm.setAlgorithmType(0);//0 for PID
+	if (ui->checkBox_pid->checkState())
+	{
+		m_algorithm.setAlgorithmType(0);
+	}
+	else if (ui->checkBox_trackmemory->checkState())
+	{
+		m_algorithm.setAlgorithmType(1);
+	}
+	else
+		m_algorithm.setAlgorithmType(2);
 }
 
-void MainWindow::slot_on_setAlgorithm_TrackMemory()
+void MainWindow::slot_on_setMode()
 {
-    m_algorithm.setAlgorithmType(1);//1 for track memory
+	if (ui->checkBox_teach->checkState())
+	{
+		m_algorithm.setStageType(0);
+	}
+	else
+	{
+		m_algorithm.setStageType(1);
+	}
 }
 
 void MainWindow::slot_on_savedata()
 {
     QVector<int> vector;
+	vector.push_back(2);
     vector.push_back(3);
     vector.push_back(12);
     vector.push_back(11);
     vector.push_back(16);
-    m_algorithm.saveData(vector,"path.txt");
+	m_track.saveData("path.txt", vector);
+	vector.clear();
+	vector.push_back(20);
+	vector.push_back(20);
+	vector.push_back(200);
+	m_track.saveData("beacon.txt", vector);
 }
 
 void MainWindow::slot_on_openFile()
 {
     emit sig_statusTable("slot_on_openFile");
-    m_algorithm.initWriting("path.txt");
-    m_algorithm.initWriting("beacon.txt");
+    //m_algorithm.initWriting("path.txt");
+    //m_algorithm.initWriting("beacon.txt");
 }
 
 void MainWindow::slot_on_loadData()
 {
-    m_algorithm.loadData();
+	//m_track.loadData("path.txt");
+	m_track.loadData("beaconRaw.txt");
+	//m_track.loadData("beacon.txt");
 }
 
 void MainWindow::slot_on_closeFile()
 {
-    m_algorithm.closeFile("path.txt");
-    m_algorithm.closeFile("beacon.txt");
+    //m_algorithm.closeFile("path.txt");
+    //m_algorithm.closeFile("beacon.txt");
 }
 
-void MainWindow::slot_on_updateCourseAngle(int angle)
+void MainWindow::slot_on_updateForwardDIST(QVector<int> vec)
 {
-    m_courseAngle = angle;
+	if (m_direction == Forward)
+	{
+		emit sig_2AlgorithmDIST(vec);
+	}
+}
+void MainWindow::slot_on_updateForwardRSSI(QVector<int> vec)
+{
+	if (m_direction == Forward)
+	{
+		emit sig_2AlgorithmRSSI(vec);
+	}
+}
+void MainWindow::slot_on_updateBackwardDIST(QVector<int> vec)
+{
+	if (m_direction == Backward)
+	{
+		emit sig_2AlgorithmDIST(vec);
+	}
+}
+void MainWindow::slot_on_updateBackwardRSSI(QVector<int> vec)
+{
+	if (m_direction == Backward)
+	{
+		emit sig_2AlgorithmRSSI(vec);
+	}
 }
 
-void MainWindow::slot_on_updateLateralOffset(int offset)
+void MainWindow::slot_on_updateForwardCourseAngle(int angle)
 {
-    m_lateralOffset = offset;
+	if (m_direction == Forward)
+		m_courseAngle = angle;
+}
+
+void MainWindow::slot_on_updateForwardLateralOffset(int offset)
+{
+	if (m_direction == Forward)
+		m_lateralOffset = offset;
+}
+
+void MainWindow::slot_on_updateBackwardCourseAngle(int angle)
+{
+	if (m_direction == Backward)
+		m_courseAngle = angle;
+}
+
+void MainWindow::slot_on_updateBackwardLateralOffset(int offset)
+{
+	if (m_direction == Backward)
+		m_lateralOffset = offset;
 }
 
 void MainWindow::slot_on_updateCAN306(QVector<int> vec)
@@ -574,8 +657,8 @@ void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
 //easy to debug:all info shows into the statusBar
 void MainWindow::slot_on_updateStatusTable(QString qstr)
 {
-    qDebug()<<"slot_on_updateStatusBar:"<<qstr;
-    qDebug()<<"rowcount:"<<ui->tableWidget->rowCount();
+    //qDebug()<<"slot_on_updateStatusBar:"<<qstr;
+    //qDebug()<<"rowcount:"<<ui->tableWidget->rowCount();
     ui->tableWidget->insertRow(ui->tableWidget->rowCount());
     QTableWidgetItem *newItem = new QTableWidgetItem(QTime::currentTime().toString());
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1,0,newItem);

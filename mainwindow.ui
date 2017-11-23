@@ -34,20 +34,6 @@
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="2">
-      <widget class="QPushButton" name="pushButton_PID">
-       <property name="text">
-        <string>PID</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QPushButton" name="pushButton_3">
-       <property name="text">
-        <string>Read SICK</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="0">
       <widget class="QPushButton" name="pushButton_6">
        <property name="text">
@@ -59,13 +45,6 @@
       <widget class="QPushButton" name="pushButton_5">
        <property name="text">
         <string>init CAN</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="pushButton_4">
-       <property name="text">
-        <string>stop SICK</string>
        </property>
       </widget>
      </item>
@@ -83,24 +62,10 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="pushButton_savedata">
-       <property name="text">
-        <string>savedata</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="2">
       <widget class="QPushButton" name="pushButton_initSurface">
        <property name="text">
         <string>init Surface</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="pushButton_openFile">
-       <property name="text">
-        <string>open file</string>
        </property>
       </widget>
      </item>
@@ -111,28 +76,42 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="pushButton_TrackMemory">
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pushButton_4">
        <property name="text">
-        <string>Track Memory</string>
+        <string>stop SICK</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="QPushButton" name="pushButton_readData">
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_openFile">
        <property name="text">
-        <string>read data</string>
+        <string>open file</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="3" column="1">
       <widget class="QPushButton" name="pushButton_closeFile">
        <property name="text">
         <string>close file</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pushButton_savedata">
+       <property name="text">
+        <string>savedata</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="pushButton_readData">
+       <property name="text">
+        <string>read data</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
       <widget class="QPushButton" name="pushButton_light2">
        <property name="text">
         <string>light2</string>
@@ -272,6 +251,53 @@
      </item>
     </layout>
    </widget>
+   <widget class="QWidget" name="gridLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>130</y>
+      <width>381</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="checkBox_pid">
+       <property name="text">
+        <string>PID</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QCheckBox" name="checkBox_trackmemory">
+       <property name="text">
+        <string>TrackMemory</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QCheckBox" name="checkBox_auto">
+       <property name="text">
+        <string>auto</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="checkBox_teach">
+       <property name="text">
+        <string>teach</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QCheckBox" name="checkBox_mixed">
+       <property name="text">
+        <string>mixed</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -279,7 +305,7 @@
      <x>0</x>
      <y>0</y>
      <width>797</width>
-     <height>25</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

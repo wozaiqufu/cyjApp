@@ -1,11 +1,11 @@
-#include "canobj.h"
+#include "CAN.h"
 #include <QDebug>
 
-CANobj::CANobj(QObject *parent) : QObject(parent)
+CAN::CAN(QObject *parent) : QObject(parent)
   ,m_s(0) {
 }
 
-bool CANobj::initCAN(const int portIndex)
+bool CAN::initCAN(const int portIndex)
 {
     int ret;
     if(0 == portIndex)
@@ -52,7 +52,7 @@ bool CANobj::initCAN(const int portIndex)
     }
 }
 
-void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
+void CAN::slot_on_sendFrame(ulong id, uchar length, uchar *data)
 {
     m_frameSend.can_id   =   id;
     m_frameSend.can_dlc =   length;
@@ -65,7 +65,7 @@ void CANobj::slot_on_sendFrame(ulong id, uchar length, uchar *data)
     }
 }
 
-void CANobj::slot_dowork()
+void CAN::slot_dowork()
 {
     m_tv.tv_sec = 1;
     m_tv.tv_usec = 0;
@@ -101,7 +101,7 @@ void CANobj::slot_dowork()
     //printFrame(&m_frameRecv);
 }
 
-void CANobj::printFrame(can_frame *frame)
+void CAN::printFrame(can_frame *frame)
 {
     qDebug()<<"can_id:"<<frame->can_id;
     qDebug()<<"dlc:"<<frame->can_dlc;
@@ -114,7 +114,7 @@ void CANobj::printFrame(can_frame *frame)
     }
 }
 
-void CANobj::handle_err_frame(const can_frame *fr)
+void CAN::handle_err_frame(const can_frame *fr)
 {
     if(fr->can_id & CAN_ERR_TX_TIMEOUT)
     {
