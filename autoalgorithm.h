@@ -74,8 +74,9 @@ private:
     bool            m_isAuto;
     QVector<int>    m_SICKdata;
     QVector<int>    m_SICKRSSI;
-	QVector<int>	m_mile_acc_deacc_left_right;
-	int				m_mile;
+	QVector<int>	m_mile_acc_deacc_left_right;//signal from mainwindow
+	int				m_mile_saved;//saved data into path.txt
+	int				m_mile_current;//current mile 
     StageType       m_stage;//teach mode or auto mode
     AlgorithmType   m_type;//PID or TrackMemory
     TrackMemory     *p_track;

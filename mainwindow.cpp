@@ -478,11 +478,17 @@ void MainWindow::slot_on_setMode()
 void MainWindow::slot_on_savedata()
 {
     QVector<int> vector;
+	vector.push_back(2);
     vector.push_back(3);
     vector.push_back(12);
     vector.push_back(11);
     vector.push_back(16);
-    //m_algorithm.saveData(vector,"path.txt");
+	m_track.saveData("path.txt", vector);
+	vector.clear();
+	vector.push_back(20);
+	vector.push_back(20);
+	vector.push_back(200);
+	m_track.saveData("beacon.txt", vector);
 }
 
 void MainWindow::slot_on_openFile()
@@ -494,7 +500,9 @@ void MainWindow::slot_on_openFile()
 
 void MainWindow::slot_on_loadData()
 {
-    //m_algorithm.loadData();
+	//m_track.loadData("path.txt");
+	m_track.loadData("beaconRaw.txt");
+	//m_track.loadData("beacon.txt");
 }
 
 void MainWindow::slot_on_closeFile()

@@ -20,6 +20,7 @@ typedef struct Beacon
 typedef struct controlCommand
 {
     int acc;
+	int deacc;
     int left;
     int right;
 }CONTROL;
@@ -29,12 +30,13 @@ class TrackMemoryImpl
 public:
     TrackMemoryImpl();
     ~TrackMemoryImpl();
-    void init(const int rssiThreshold,const int beaconLengthThr,const int accmax,const int accmin,const int angmax,const int angmin);
-    QVector<int>  update(int mile, QVector<int> dist, QVector<int> rssi);
-    bool          saveData(const QString fileName,QVector<int> vec);
-	bool		  isBeaconLost(QVector<int> dist, QVector<int> rssi);
+    void			init(const int rssiThreshold,const int beaconLengthThr,const int accmax,const int accmin,const int angmax,const int angmin);
+    QVector<int>	update(int mile, QVector<int> dist, QVector<int> rssi);
+    bool			saveData(const QString fileName,QVector<int> vec);
+	bool			loadData(const QString txtName);
+	bool			isBeaconLost(QVector<int> dist, QVector<int> rssi);
+	int				currentBeacon();
 private:
-     bool         loadData(const QString txtName);
      QVector<int> beaconLength(QVector<int> dist,QVector<int> rssi,const int delta);
      QVector<int> Pro_binary(QVector<int> vec) const;//for beaconLength use(111001111 filter 00)
      bool         matchBeacon(const QVector<int> &vec,const double threshold);//m_beaconIndex is updated!
@@ -90,9 +92,19 @@ bool TrackMemory::saveData(const QString fileName, QVector<int> vec)
 {
 	return m_Impl->saveData(fileName, vec);
 }
+
+bool TrackMemory::loadData(const QString fileName)
+{
+	return m_Impl->loadData(fileName);
+}
 bool TrackMemory::isBeaconLost(QVector<int> dist, QVector<int> rssi)
 {
 	return m_Impl->isBeaconLost(dist,rssi);
+}
+
+int	TrackMemory::currentBeacon()
+{
+	return m_Impl->currentBeacon();
 }
 TrackMemory::~TrackMemory()
 {
@@ -152,7 +164,9 @@ void TrackMemoryImpl::init(const int rssiThreshold,const int beaconLengthThr,con
         return;
     else
         m_angmin = angmin;
-	loadData();
+	loadData("beaconRaw.txt");
+	loadData("path.txt");
+	loadData("beacon.txt");
 }
 
 QVector<int> TrackMemoryImpl::update(int mile, QVector<int> dist, QVector<int> rssi)
@@ -192,7 +206,7 @@ QVector<int> TrackMemoryImpl::update(int mile, QVector<int> dist, QVector<int> r
 	}
     }
 }
-
+ 
 bool TrackMemoryImpl::isBeaconLost(QVector<int> dist, QVector<int> rssi)
 {
 	if (matchBeacon(beaconLength(dist, rssi, m_rssiThreshold), m_beaconLengthThreshold))
@@ -209,6 +223,7 @@ bool TrackMemoryImpl::isBeaconLost(QVector<int> dist, QVector<int> rssi)
 		return true;
 	else return false;
 }
+
 bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
 {
     if(fileName==m_pathFile.fileName())
@@ -218,24 +233,20 @@ bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
             m_pathFile.open(QIODevice::Text|QIODevice::WriteOnly);
             m_pathTextStream.setDevice(&m_pathFile);
         }
-        int numEachLine = vec.at(0);
-        if(numEachLine!=(vec.size()-1))
+        int numEachLine = vec.size();
+        if(numEachLine<=0)
         {
-            qDebug()<<"saveData to " + fileName + ".txt:vector Error!";
+            qDebug()<<"saveData to " + fileName + ":vector Error!";
             return false;
         }
+		m_pathTextStream << numEachLine << "#";
         for(int i=0;i<vec.size();i++)
         {
-            if(i==0)
-            {
-                 m_pathTextStream<<vec.at(i)<<"#";
-            }
-            else
-            {
-                 m_pathTextStream<<vec.at(i)<<",";
-            }
+			if (i == vec.size() - 1)
+				m_pathTextStream << vec.at(i)<<endl;
+			else
+			m_pathTextStream << vec.at(i) << ",";
         }
-         m_pathTextStream<<endl;
          return true;
     }
     else if(fileName==m_beaconFile.fileName())
@@ -245,24 +256,24 @@ bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
             m_beaconFile.open(QIODevice::Text|QIODevice::WriteOnly);
             m_beaconTextStream.setDevice(&m_beaconFile);
         }
-        int numEachLine = vec.at(0);
-        if(numEachLine!=(vec.size()-1))
+        int numEachLine = vec.size();
+        if(numEachLine<=0)
         {
-            qDebug()<<"saveData to " + fileName + ".txt:vector Error!";
+            qDebug()<<"saveData to " + fileName + ":vector Error!";
             return false;
         }
+		m_beaconTextStream << numEachLine << "#";
         for(int i=0;i<vec.size();i++)
         {
-            if(i==0)
+            if(i==vec.size()-1)
             {
-                 m_beaconTextStream<<vec.at(i)<<"#";
+				m_beaconTextStream << vec.at(i) << endl;
             }
             else
             {
                  m_beaconTextStream<<vec.at(i)<<",";
             }
         }
-         m_beaconTextStream<<endl;
          return true;
     }
     else
@@ -271,137 +282,149 @@ bool TrackMemoryImpl::saveData(const QString fileName, QVector<int> vec)
 
 bool TrackMemoryImpl::loadData(const QString txtName)
 {
-    //load beacon data:beaconRaw.txt
-    QFile file;
-    file.setFileName("beaconRaw.txt");
-    if(file.open(QIODevice::ReadOnly))
-    {
-        QTextStream textStream(&file);
-        while(!textStream.atEnd())
-        {
-            bool ok;
-            QByteArray line = file.readLine();
-            int data =  line.toInt(&ok,10);
-            if(!ok)
-            {
-                qDebug()<<"loadBeaconData:data Error!";
-                break;
-            }
-            m_beacon.append(data);
-        }
-    }
-    //file.close();
-    //load beacon and mile data:beacon.txt
-    file.setFileName("beacon.txt");
-    if(file.open(QIODevice::ReadOnly))
-    {
-        QTextStream textStream(&file);
-        while(!textStream.atEnd())
-        {
-            {
-                Beacon beacon;
-                int index = 0;
-                bool ok;
-                QByteArray line = file.readLine();
-                qDebug()<<"beacon line:"<<line;
-                QByteArray dataNum = line.mid(index,line.indexOf("#",index)-index);
-                //emit sig_statusTable("data num each line is:"+QString(dataNum));
-                index = line.indexOf("#",index) + 1;
-                int iDataNum = dataNum.toInt(&ok,10);
-                if(ok!=true)
-                {
-                    qDebug()<<"loadData:dataNum Error!";
-                    return false;
-                }
-                for(int i=0;i<iDataNum;i++)
-                {
-                    QByteArray bData = line.mid(index,line.indexOf(",",index)-index);
-                    int iData = bData.toInt(&ok,10);
-                    if(ok!=true)
-                    {
-                        qDebug()<<"loadData:iDataNum";
-                        return false;
-                    }
-                    switch(i)
-                    {
-                    case 0:
-                        beacon.width_left = iData;
-                        break;
-                    case 1:
-                        beacon.width_right = iData;
-                        break;
-                    case 2:
-                        beacon.mile = iData;
-                        break;
-                    default:
-                        break;
-                    }
-                    index = line.indexOf(",",index) + 1;
-            }
-                m_beaconAndMile.append(beacon);
-            }
-        }
-        for(int i=0;i<m_beaconAndMile.size();i++)
-        {
-             qDebug()<<"m_beaconAndMile left:"<<m_beaconAndMile.at(i).width_left;
-             qDebug()<<"m_beaconAndMile right:"<<m_beaconAndMile.at(i).width_right;
-             qDebug()<<"m_beaconAndMile mile:"<<m_beaconAndMile.at(i).mile;
-        }
-    }
-    //file.close();
-    //load mile and control command data:path.txt
-     file.setFileName("path.txt");
-     if(file.open(QIODevice::ReadOnly))
-     {
-         QTextStream textStream(&file);
-         while(!textStream.atEnd())
-         {
-             controlCommand contr;
-             int disp = 0;
-             int index = 0;
-             bool ok;
-             QByteArray line = file.readLine();
-             qDebug()<<"line:"<<line;
-             QByteArray dataNum = line.mid(index,line.indexOf("#",index)-index);
-             index = line.indexOf("#",index) + 1;
-             int iDataNum = dataNum.toInt(&ok,10);
-             if(ok!=true)
-             {
-                 qDebug()<<"loadData:dataNum Error!";
-                 return false;
-             }
-             for(int i=0;i<iDataNum;i++)
-             {
-                 QByteArray bData = line.mid(index,line.indexOf(",",index)-index);
-                 int iData = bData.toInt(&ok,10);
-                 if(ok!=true)
-                 {
-                     qDebug()<<"loadData:iDataNum";
-                     return false;
-                 }
-                 switch(i)
-                 {
-                 case 0:
-                     disp = iData;
-                     break;
-                 case 1:
-                     contr.acc = iData;
-                     break;
-                 case 2:
-                     contr.left = iData;
-                 case 3:
-                     contr.right = iData;
-                     break;
-                 default:
-                     break;
-                 }
-                 m_trackMap.insert(disp,contr);
-                 index = line.indexOf(",",index) + 1;
-             }
-         }
-     }
-     //file.close();
-     return true;
+	if (txtName == "beaconRaw.txt")
+	{
+		//load beacon data:beaconRaw.txt
+		QFile file;
+		file.setFileName("beaconRaw.txt");
+		if (file.open(QIODevice::ReadOnly))
+		{
+			QTextStream textStream(&file);
+			while (!textStream.atEnd())
+			{
+				bool ok;
+				QByteArray line = file.readLine();
+				int data = line.toInt(&ok, 10);
+				if (!ok)
+				{
+					qDebug() << "loadBeaconData:data Error!";
+					break;
+				}
+				m_beacon.append(data);
+			}
+		}
+	}
+	else if (txtName == "beacon.txt")
+	{
+		//load beacon and mile data:beacon.txt
+		QFile file;
+		file.setFileName("beacon.txt");
+		if (file.open(QIODevice::ReadOnly))
+		{
+			QTextStream textStream(&file);
+			while (!textStream.atEnd())
+			{
+				{
+					Beacon beacon;
+					int index = 0;
+					bool ok;
+					QByteArray line = file.readLine();
+					qDebug() << "beacon line:" << line;
+					QByteArray dataNum = line.mid(index, line.indexOf("#", index) - index);
+					//emit sig_statusTable("data num each line is:"+QString(dataNum));
+					index = line.indexOf("#", index) + 1;
+					int iDataNum = dataNum.toInt(&ok, 10);
+					if (ok != true)
+					{
+						qDebug() << "loadData:dataNum Error!";
+						return false;
+					}
+					for (int i = 0; i<iDataNum; i++)
+					{
+						QByteArray bData = line.mid(index, line.indexOf(",", index) - index);
+						int iData = bData.toInt(&ok, 10);
+						if (ok != true)
+						{
+							qDebug() << "loadData:iDataNum";
+							return false;
+						}
+						switch (i)
+						{
+						case 0:
+							beacon.width_left = iData;
+							break;
+						case 1:
+							beacon.width_right = iData;
+							break;
+						case 2:
+							beacon.mile = iData;
+							break;
+						default:
+							break;
+						}
+						index = line.indexOf(",", index) + 1;
+					}
+					m_beaconAndMile.append(beacon);
+				}
+			}
+			for (int i = 0; i<m_beaconAndMile.size(); i++)
+			{
+				qDebug() << "m_beaconAndMile left:" << m_beaconAndMile.at(i).width_left;
+				qDebug() << "m_beaconAndMile right:" << m_beaconAndMile.at(i).width_right;
+				qDebug() << "m_beaconAndMile mile:" << m_beaconAndMile.at(i).mile;
+			}
+		}
+	}
+	else if (txtName == "path.txt")
+	{
+		//load mile and control command data:path.txt
+		QFile file;
+		file.setFileName("path.txt");
+		if (file.open(QIODevice::ReadOnly))
+		{
+			QTextStream textStream(&file);
+			while (!textStream.atEnd())
+			{
+				controlCommand contr;
+				int disp = 0;
+				int index = 0;
+				bool ok;
+				QByteArray line = file.readLine();
+				qDebug() << "line:" << line;
+				QByteArray dataNum = line.mid(index, line.indexOf("#", index) - index);
+				index = line.indexOf("#", index) + 1;
+				int iDataNum = dataNum.toInt(&ok, 10);
+				if (ok != true)
+				{
+					qDebug() << "loadData:dataNum Error!";
+					return false;
+				}
+				for (int i = 0; i<iDataNum; i++)
+				{
+					QByteArray bData = line.mid(index, line.indexOf(",", index) - index);
+					int iData = bData.toInt(&ok, 10);
+					if (ok != true)
+					{
+						qDebug() << "loadData:iDataNum";
+						return false;
+					}
+					switch (i)
+					{
+					case 0:
+						disp = iData;
+						break;
+					case 1:
+						contr.acc = iData;
+						break;
+					case 2:
+						contr.deacc = iData;
+						break;
+					case 3:
+						contr.left = iData;
+						break;
+					case 4:
+						contr.right = iData;
+						break;
+					default:
+						break;
+					}
+					m_trackMap.insert(disp, contr);
+					index = line.indexOf(",", index) + 1;
+				}
+			}
+		}
+	}
+	else return false;
 }
 
 QVector<int> TrackMemoryImpl::beaconLength(QVector<int> dist,QVector<int> rssi,const int delta)
@@ -547,6 +570,14 @@ bool TrackMemoryImpl::matchBeacon(const QVector<int> &vec, const double threshol
         }
     }
     return false;
+}
+
+int	TrackMemoryImpl::currentBeacon()
+{
+	if (m_beacon.size() <= 0)
+		return -1;
+	else
+		return m_beacon.at(m_beaconIndex);
 }
 
 void TrackMemoryImpl::calibMile(const int mile)

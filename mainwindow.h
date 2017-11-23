@@ -9,6 +9,8 @@
 //#include "CAN.h"
 #include "surfacecommunication.h"
 #include "autoalgorithm.h"
+//test only
+#include "trackmemory.h"
 
 namespace Ui {
 class MainWindow;
@@ -120,7 +122,7 @@ private:
 *****************************/
     int _light;
     bool _CANReady;
-
+	TrackMemory m_track;
     /**receive surface control
 *****************************/
     QVector<int> m_surface_control_vec;
