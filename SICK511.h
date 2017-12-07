@@ -32,7 +32,7 @@ signals:
     void	sigUpdateCourseAngle(int);
     void	sigUpdateLateralOffset(int);
     void	sigUpdateDIST(QVector<int>);
-    void	sigUpdataRSSI(QVector<int>);
+    void	sigUpdateRSSI(QVector<int>);
     void	sig_statusTable(QString);
 private slots:
     void slot_on_readMessage();
@@ -42,30 +42,26 @@ private:
 	QString m_ip;
 	int		m_port;
 	bool	m_isOn;
-//    static const int m_hostPort_SICK = 2111;
-//    static const double m_PI = 3.141592653;
-//    static const int m_milSecondsWait = 5000;//wait maximum seconds when establish the TCP connection
-    const int		m_hostPort_SICK = 2111;
-    const double	m_PI = 3.141592653;
-    const int		m_milSecondsWait = 2000;//wait maximum seconds when establish the TCP connection
-    QByteArray		m_dataRecieved;
-	QTcpSocket		m_tcpSocket;
-    QVector<int>	m_DISTdata;//final distance data is here!
-    QVector<int>	m_RSSIdata;//final RSSI data is here!
-    int				m_numberDataOneSocket;
-	double			m_angleResolution;
-	int             m_courseAngle;//for lateral offset calculation!
-	int				m_lateralOffset;
+    static const double	m_PI = 3.141592653;
+    static const int	MILSECONDSWAIT = 2000;//wait maximum seconds when establish the TCP connection
+    QByteArray          m_dataRecieved;
+    QTcpSocket          m_tcpSocket;
+    QVector<int>        m_DISTdata;//final distance data is here!
+    QVector<int>        m_RSSIdata;//final RSSI data is here!
+    int                 m_numberDataOneSocket;
+    double              m_angleResolution;
+    int                 m_courseAngle;//for lateral offset calculation!
+    int                 m_lateralOffset;
 //    static const double m_pi = 3.141592653;
 //    static const double m_Angle_degree2Radian = 0.0174532925;
-//    static const int m_angleStart = 0;
-//    static const int m_anglel1l2 = 30;
+//    static const int STARTANGLE = 0;
+//    static const int L1L2ANGLE = 30;
 //    static const int m_angleDeltaMax = 30;
 //    static const int m_angleResolution = 1;
-    const double	m_pi = 3.141592653;
-    const double	m_Angle_degree2Radian = 0.0174532925;
-    const int		m_angleStart = 0;
-    const int		m_anglel1l2 = 30;
-    const int		m_angleScale = 30;
+    static const double	PI = 3.141592653;
+    static const double	ANGLEDEGREE2RADIUS = 0.0174532925;
+    static const int	STARTANGLE = 0;
+    static const int	L1L2ANGLE = 30;
+    static const int	ANGLESACLE = 30;
 };
 #endif

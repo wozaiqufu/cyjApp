@@ -65,12 +65,12 @@ private:
      int                        m_accmax;
      int                        m_angmax;
      int                        m_angmin;
-//     static const int           m_angleMax = 30;
-//     static const double        m_Angle_degree2Radian = 0.0174532925;
-//     static const int           m_acceleratorMax = 100;
-     const int           m_angleMax = 30;
-     const double        m_Angle_degree2Radian = 0.0174532925;
-     const int           m_acceleratorMax = 100;
+     static const int           MAXANGLE = 30;
+     static const double        ANGLEDEGREE2RADIUS = 0.0174532925;
+     static const int           MAXACC = 100;
+     //const int           m_angleMax = 30;
+     //const double        m_Angle_degree2Radian = 0.0174532925;
+     //const int           m_acceleratorMax = 100;
 };
 
 TrackMemory::TrackMemory()
@@ -284,6 +284,7 @@ bool TrackMemoryImpl::loadData(const QString txtName)
 {
 	if (txtName == "beaconRaw.txt")
 	{
+        if(m_beacon.size()>0) return false;
 		//load beacon data:beaconRaw.txt
 		QFile file;
 		file.setFileName("beaconRaw.txt");
@@ -302,10 +303,12 @@ bool TrackMemoryImpl::loadData(const QString txtName)
 				}
 				m_beacon.append(data);
 			}
+            return true;
 		}
 	}
 	else if (txtName == "beacon.txt")
 	{
+        if(m_beaconAndMile.size()>0) return false;
 		//load beacon and mile data:beacon.txt
 		QFile file;
 		file.setFileName("beacon.txt");
@@ -367,6 +370,7 @@ bool TrackMemoryImpl::loadData(const QString txtName)
 	}
 	else if (txtName == "path.txt")
 	{
+        if(m_trackMap.size()>0) return false;
 		//load mile and control command data:path.txt
 		QFile file;
 		file.setFileName("path.txt");
@@ -480,7 +484,7 @@ QVector<int> TrackMemoryImpl::beaconLength(QVector<int> dist,QVector<int> rssi,c
             //qDebug()<<"start Length";
             dist1_beacon = dist.at(pos01_binary_vec.at(ix));
             dist2_beacon = dist.at(pos10_binary_vec.at(ix));
-            double angle_beacon = (pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix)) * m_Angle_degree2Radian;
+            double angle_beacon = (pos10_binary_vec.at(ix) - pos01_binary_vec.at(ix)) * ANGLEDEGREE2RADIUS;
             qDebug()<<"dist1_beacon "<<dist1_beacon;
             qDebug()<<"dist2_beacon "<<dist2_beacon;
             qDebug()<<"angle_beacon "<<angle_beacon;
@@ -488,7 +492,7 @@ QVector<int> TrackMemoryImpl::beaconLength(QVector<int> dist,QVector<int> rssi,c
             int temp3 = sqrt(pow(dist1_beacon,2) + pow(dist2_beacon,2)- 2*dist1_beacon*dist2_beacon*cos(angle_beacon));
             if(temp3 >0)
             {
-                double angle_beacon = angle_num * m_Angle_degree2Radian * 0.5;
+                double angle_beacon = angle_num * ANGLEDEGREE2RADIUS * 0.5;
                 int temp1 = pos01_binary_vec.at(ix);
                 int dist1_beacon = dist[temp1];
                 int temp2 = pos10_binary_vec.at(ix);
@@ -507,7 +511,7 @@ QVector<int> TrackMemoryImpl::beaconLength(QVector<int> dist,QVector<int> rssi,c
 
 QVector<int> TrackMemoryImpl::Pro_binary(QVector<int> vec) const
 {
-    QVector<int> Pro_vec = vec;
+        QVector<int> Pro_vec = vec;
         QVector<int> expansion_vec ;
         QVector<int> corrosion_vec ;
         //expansion

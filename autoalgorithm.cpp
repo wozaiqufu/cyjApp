@@ -20,7 +20,7 @@ void autoAlgorithm::update()
 	{
 	case autoAlgorithm::Teach:
 		p_track->loadData("beaconRaw.txt");
-		if (isCertainMileIncrement(m_mile_current, m_mileDelta))
+        if (isCertainMileIncrement(m_mile_current, MILEDELTA))
 		{
 			p_track->saveData("path.txt", m_mile_acc_deacc_left_right);
 			m_mile_current = m_mile_acc_deacc_left_right.at(0);
@@ -138,5 +138,5 @@ bool autoAlgorithm::isCertainMileIncrement(const int mile, const int inc)
 {
 	//10% of m_mileDelta
 	if ((mile - m_mile_saved) <= 0) return false;
-	return (abs(mile - m_mile_saved - m_mileDelta) < 0.1*m_mileDelta);
+    return (abs(mile - m_mile_saved - MILEDELTA) < 0.1*MILEDELTA);
 }

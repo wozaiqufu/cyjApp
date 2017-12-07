@@ -30,7 +30,7 @@ bool SICK511::init(const QString name, const QString ip, const int port)
 	m_port = port;
 	m_tcpSocket.abort();
 	m_tcpSocket.connectToHost(m_ip, m_port);
-	if (m_tcpSocket.waitForConnected(m_milSecondsWait))
+    if (m_tcpSocket.waitForConnected(MILSECONDSWAIT))
 	{
 		emit sig_statusTable(m_name + "init succeeded");
 		m_isOn = true;
@@ -176,7 +176,7 @@ void SICK511::extractRSSIData()
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
      //signal to surface obj
-     emit sigUpdataRSSI(m_RSSIdata);
+     emit sigUpdateRSSI(m_RSSIdata);
      //qDebug()<<"\n"<<"m_RSSIdata_forward in decimal:"<<m_RSSIdata_forward;
      //qDebug()<<"size of m_RSSIdata_forward:"<<m_RSSIdata_forward.size();
 }
@@ -205,27 +205,27 @@ int SICK511::courseAngle()
 		//right side
 		double sumCourse = 0;
 		int validCount = 0;
-		qDebug() << "total index is:" << m_angleScale / m_angleResolution;
-		for (int i = 0; i<m_angleScale/m_angleResolution; i++)
+        qDebug() << "total index is:" << ANGLESACLE / m_angleResolution;
+        for (int i = 0; i<ANGLESACLE/m_angleResolution; i++)
 		{
 			//l1!=0&&l2!=0
-			if ((m_DISTdata.at(angle2index(m_angleStart) + i) == 0) || (m_DISTdata.at(angle2index(m_angleStart + m_anglel1l2) + i) == 0))
+            if ((m_DISTdata.at(angle2index(STARTANGLE) + i) == 0) || (m_DISTdata.at(angle2index(STARTANGLE + L1L2ANGLE) + i) == 0))
 			{
 				continue;
 			}
 			//qDebug()<<"Valid count======:"<<validCount;
 			//beta
-			double l1 = m_DISTdata.at(angle2index(m_angleStart) + i);
-			//qDebug() << "right l1 data index:" << angle2index(m_angleStart) + i;
-			double l2 = m_DISTdata.at(angle2index(m_angleStart + m_anglel1l2) + i);
-			//qDebug() << "right l2 data index:" << angle2index(m_angleStart + m_anglel1l2) + i;
+            double l1 = m_DISTdata.at(angle2index(STARTANGLE) + i);
+            //qDebug() << "right l1 data index:" << angle2index(STARTANGLE) + i;
+            double l2 = m_DISTdata.at(angle2index(STARTANGLE + L1L2ANGLE) + i);
+            //qDebug() << "right l2 data index:" << angle2index(STARTANGLE + L1L2ANGLE) + i;
 			double l3 = sqrt(pow(l1, 2)
 				+ pow(l2, 2)
-				- 2 * l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+                - 2 * l1*l2*cos(L1L2ANGLE*ANGLEDEGREE2RADIUS));
 			//qDebug()<<"l3:"<<l3;
 			double cos_beta = (pow(l1, 2) + pow(l3, 2) - pow(l2, 2)) / (2 * l1*l3);
 			//qDebug()<<"cos_beta"<<cos_beta;
-			double icourse = 90 + (m_angleStart + i) - acos(cos_beta) / m_Angle_degree2Radian;
+            double icourse = 90 + (STARTANGLE + i) - acos(cos_beta) / ANGLEDEGREE2RADIUS;
 			//qDebug()<<"icourse:"<<icourse;
 			//sum of course
 			sumCourse += icourse;
@@ -243,27 +243,27 @@ int SICK511::courseAngle()
 		//left side
 		sumCourse = 0;
 		validCount = 0;
-		for (int i = 0; i<m_angleScale/m_angleResolution; i++)
+        for (int i = 0; i<ANGLESACLE/m_angleResolution; i++)
 		{
 			//l1!=0&&l2!=0
-			if ((m_DISTdata.at(angle2index(180 - m_angleStart) - i) == 0) || (m_DISTdata.at(angle2index(180 - m_angleStart - m_anglel1l2) - i) == 0))
+            if ((m_DISTdata.at(angle2index(180 - STARTANGLE) - i) == 0) || (m_DISTdata.at(angle2index(180 - STARTANGLE - L1L2ANGLE) - i) == 0))
 			{
 				continue;
 			}
 			//qDebug()<<"Valid count======:"<<validCount;
 			//beta
-			double l1 = m_DISTdata.at(angle2index(180 - m_angleStart - i));
-			//qDebug() << "left l1 data index:" << angle2index(180 - m_angleStart - i);
-			double l2 = m_DISTdata.at(angle2index(180 - m_angleStart - m_anglel1l2 - i));
-			//qDebug() << "left l2 data index:" << angle2index(180 - m_angleStart - m_anglel1l2 - i);
-			double l3 = sqrt(pow(l1, 2) + pow(l2, 2) - 2 * l1*l2*cos(m_anglel1l2*m_Angle_degree2Radian));
+            double l1 = m_DISTdata.at(angle2index(180 - STARTANGLE - i));
+            //qDebug() << "left l1 data index:" << angle2index(180 - STARTANGLE - i);
+            double l2 = m_DISTdata.at(angle2index(180 - STARTANGLE - L1L2ANGLE - i));
+            //qDebug() << "left l2 data index:" << angle2index(180 - STARTANGLE - L1L2ANGLE - i);
+            double l3 = sqrt(pow(l1, 2) + pow(l2, 2) - 2 * l1*l2*cos(L1L2ANGLE*ANGLEDEGREE2RADIUS));
 			//qDebug()<<"l1:"<<l1;
 			//qDebug()<<"l2:"<<l2;
 			//qDebug()<<"l3:"<<l3;
 			double cos_beta = (pow(l1, 2) + pow(l3, 2) - pow(l2, 2)) / (2 * l1*l3);
 			//qDebug()<<"beta:"<<acos(cos_beta)/m_Angle_degree2Radian;
 			//sum of beta
-			double icourse = acos(cos_beta) / m_Angle_degree2Radian - 90 - i;
+            double icourse = acos(cos_beta) / ANGLEDEGREE2RADIUS - 90 - i;
 			//qDebug()<<"icourse"<<icourse;
 			sumCourse += icourse;
 			validCount++;
@@ -305,15 +305,15 @@ int SICK511::lateralOffset()
 		double H1 = 0;
 		double H2 = 0;
 		int validCount = 0;
-		for (int i = 0; i < m_angleScale / m_angleResolution; i++)
+        for (int i = 0; i < ANGLESACLE / m_angleResolution; i++)
 		{
 			//right side h1
-			double l = m_DISTdata.at(i + angle2index(m_angleStart));
+            double l = m_DISTdata.at(i + angle2index(STARTANGLE));
 			if (l == 0)
 			{
 				continue;
 			}
-			double h1 = l*cos(m_Angle_degree2Radian*(m_courseAngle - m_angleStart - angle2index(i)));
+            double h1 = l*cos(ANGLEDEGREE2RADIUS*(m_courseAngle - STARTANGLE - angle2index(i)));
 			//                qDebug()<<"l"<<l;
 			//                qDebug()<<"valid:"<<validCount;
 			//                qDebug()<<"h1:"<<h1;
@@ -328,15 +328,15 @@ int SICK511::lateralOffset()
 		H1 = sumH1 / validCount;
 		//            qDebug()<<"H1"<<H1;
 		validCount = 0;
-		for (int i = 0; i < m_angleScale/m_angleResolution; i++)
+        for (int i = 0; i < ANGLESACLE/m_angleResolution; i++)
 		{
 			//left side h2
-			double l = m_DISTdata.at(angle2index(180 - m_angleStart) - i);
+            double l = m_DISTdata.at(angle2index(180 - STARTANGLE) - i);
 			if (l == 0)
 			{
 				continue;
 			}
-			double h2 = l*cos(m_Angle_degree2Radian*(m_courseAngle + m_angleStart + angle2index(i)));
+            double h2 = l*cos(ANGLEDEGREE2RADIUS*(m_courseAngle + STARTANGLE + angle2index(i)));
 			sumH2 += h2;
 			validCount++;
 		}
@@ -356,8 +356,8 @@ int SICK511::lateralOffset()
 
 void SICK511::slot_on_error(QAbstractSocket::SocketError)
 {
-     emit sig_statusTable("forward error:");
-     qDebug()<<"backward error:"<<m_tcpSocket.errorString();
+     emit sig_statusTable("SICK511 TCP Socket error:");
+     qDebug()<<"TCP Socket error:"<<m_tcpSocket.errorString();
 	 m_isOn = false;
 }
 

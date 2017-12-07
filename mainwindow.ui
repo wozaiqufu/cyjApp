@@ -34,10 +34,10 @@
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="0">
-      <widget class="QPushButton" name="pushButton_6">
+     <item row="4" column="2">
+      <widget class="QPushButton" name="pushButton_light2">
        <property name="text">
-        <string>Read CAN</string>
+        <string>light2</string>
        </property>
       </widget>
      </item>
@@ -48,31 +48,31 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
+     <item row="4" column="1">
+      <widget class="QPushButton" name="pushButton_closeFile">
+       <property name="text">
+        <string>close file</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
       <widget class="QPushButton" name="pushButton_bothLight">
        <property name="text">
         <string>both light</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QPushButton" name="pushButton">
+     <item row="1" column="0">
+      <widget class="QPushButton" name="pushButton_6">
        <property name="text">
-        <string>connect SICK</string>
+        <string>Read CAN</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="pushButton_initSurface">
+     <item row="3" column="2">
+      <widget class="QPushButton" name="pushButton_readData">
        <property name="text">
-        <string>init Surface</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QPushButton" name="pushButton_light1">
-       <property name="text">
-        <string>light1</string>
+        <string>read data</string>
        </property>
       </widget>
      </item>
@@ -83,17 +83,24 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="0" column="1">
+      <widget class="QPushButton" name="pushButton">
+       <property name="text">
+        <string>connect SICK511</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
       <widget class="QPushButton" name="pushButton_openFile">
        <property name="text">
         <string>open file</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="pushButton_closeFile">
+     <item row="4" column="0">
+      <widget class="QPushButton" name="pushButton_light1">
        <property name="text">
-        <string>close file</string>
+        <string>light1</string>
        </property>
       </widget>
      </item>
@@ -104,17 +111,24 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="pushButton_readData">
+     <item row="0" column="2">
+      <widget class="QPushButton" name="pushButton_initSurface">
        <property name="text">
-        <string>read data</string>
+        <string>init Surface</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="pushButton_light2">
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_connect400">
        <property name="text">
-        <string>light2</string>
+        <string>connectSICK400</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="pushButton_stop400">
+       <property name="text">
+        <string>stopSICK400</string>
        </property>
       </widget>
      </item>
@@ -123,8 +137,8 @@
    <widget class="QWidget" name="gridLayoutWidget_4">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>10</y>
+      <x>400</x>
+      <y>0</y>
       <width>361</width>
       <height>111</height>
      </rect>
@@ -305,7 +319,7 @@
      <x>0</x>
      <y>0</y>
      <width>797</width>
-     <height>23</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

@@ -6,30 +6,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-m_isNeutralGear(false),
-m_isBraking(true),
-m_isEmergencyStop(false),
-m_isMainLight(false),
-m_isHorning(false),
 m_controlMode(Local),
-m_isEngineStarted(false),
-m_isEngineswitchMedium(true),
-m_isEarthFault(false),
-m_isIntegratedFault(false),
-m_isOverTemperutureFault(false),
-m_bucketUp(0),
-m_bucketDown(0),
-m_tipingBucket(0),
-m_backBucket(0),
-m_turnLeft(0),
-m_turnRight(0),
-m_accelerator(0),
-m_deaccelerator(0),
-m_velocity(0),
-m_engineSpeed(0),
-m_spliceAngle(0),
-m_waterTemperature(0),
-m_alarm(0),
 m_mileMeter(0),
 /*************************/
 m_direction(Forward),
@@ -51,6 +28,8 @@ _CANReady(false)
     connect(ui->pushButton_light2,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame2()));
     connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
+    connect(ui->pushButton_connect400,SIGNAL(clicked()),this,SLOT(slot_on_initSICK400()));
+    connect(ui->pushButton_stop400,SIGNAL(clicked()),this,SLOT(slot_on_stopSICK400()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
 	QButtonGroup* check_group[2];
 	check_group[0] = new QButtonGroup(this);
@@ -72,16 +51,16 @@ _CANReady(false)
     connect(ui->pushButton_savedata,SIGNAL(clicked()),this,SLOT(slot_on_savedata()));
     connect(ui->pushButton_readData,SIGNAL(clicked()),this,SLOT(slot_on_loadData()));
     connect(ui->pushButton_closeFile,SIGNAL(clicked()),this,SLOT(slot_on_closeFile()));
-    m_timer_main.start(100);
+    m_timer_main.start(30);
     //signals:mainwindow,slots:autoAlgorithm
     connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
     //signals:SICK,slots:autoAlgorithm
 
 	//signals:SICK,slots:mainwindow
-	connect(&m_sick511_f, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateForwardDIST(QVector<int> vec)));
-	connect(&m_sick511_f, SIGNAL(sigUpdataRSSI(QVector<int>)), this, SLOT(slot_on_updateForwardRSSI(QVector<int> vec)));
-	connect(&m_sick511_b, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateBackwardDIST(QVector<int> vec)));
-	connect(&m_sick511_b, SIGNAL(sigUpdataRSSI(QVector<int>)), this, SLOT(slot_on_updateBackwardRSSI(QVector<int> vec)));
+    connect(&m_sick511_f, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateForwardDIST(QVector<int> vec)));
+    connect(&m_sick511_f, SIGNAL(sigUpdateRSSI(QVector<int>)), this, SLOT(slot_on_updateForwardRSSI(QVector<int> vec)));
+    connect(&m_sick511_b, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateBackwardDIST(QVector<int> vec)));
+    connect(&m_sick511_b, SIGNAL(sigUpdateRSSI(QVector<int>)), this, SLOT(slot_on_updateBackwardRSSI(QVector<int> vec)));
 	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
 	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
 	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
@@ -104,7 +83,7 @@ void MainWindow::initStatusTable()
     headers<<"Time"<<"Message";
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-    //ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     //connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
 	connect(&m_sick511_f, SIGNAL(sig_statusTable(QString)), this, SLOT(slot_on_updateStatusTable(QString)));
     connect(&m_algorithm,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
@@ -112,12 +91,35 @@ void MainWindow::initStatusTable()
     connect(this,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
 }
 
+void MainWindow::checkControlMode()
+{
+    if(m_cyjData_actual.remoteLocal==0&&m_cyjData_actual.automanual==0)
+    {
+        m_controlMode = Local;
+    }
+    else if(m_cyjData_actual.remoteLocal==1&&m_cyjData_actual.automanual==0)
+    {
+        m_controlMode = Visible;
+    }
+    else if(m_cyjData_actual.remoteLocal==1&&m_cyjData_actual.automanual==1)
+    {
+        if(m_cyjData_surface.remoteLocal==1&&m_cyjData_surface.automanual==0)
+        {
+            m_controlMode = Remote;
+        }
+        else if(m_cyjData_surface.remoteLocal==1&&m_cyjData_surface.automanual==1)
+        {
+            m_controlMode = Auto;
+        }
+    }
+}
+
 void MainWindow::slot_on_initSICK511()
 {
-	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
-	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
-	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
-	connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateBackwardLateralOffset(int)));
+//	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
+//	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
+//	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
+//	connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateBackwardLateralOffset(int)));
 	if (m_sick511_f.init("forward", "192.168.1.50", 2111))
 	{
 		m_sick511_f.continuousStart();
@@ -136,30 +138,33 @@ void MainWindow::slot_on_stopSICK511()
 
 void MainWindow::slot_on_initCAN()
 {
-//    m_can.moveToThread(&m_thread_CAN);
-//    m_timer_CAN.setInterval(5);
-//    m_timer_CAN.moveToThread(&m_thread_CAN);
-//    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
-//    connect(&m_can,SIGNAL(sigUpdateCAN306(QVector<int>)),this,SLOT(slot_on_updateCAN306(QVector<int>)));
-//    connect(&m_can,SIGNAL(sigUpdateCAN307(QVector<int>)),this,SLOT(slot_on_updateCAN307(QVector<int>)));
-//    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
-//    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
-//    m_can.initCAN(0);
+    m_can.moveToThread(&m_thread_CAN);
+    m_timer_CAN.setInterval(10);
+    m_timer_CAN.moveToThread(&m_thread_CAN);
+    connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
+    connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
+    connect(&m_can,SIGNAL(sigUpdateCAN305(QVector<int>)),this,SLOT(slot_on_updateCAN305(QVector<int>)));
+    connect(&m_can,SIGNAL(sig_statusTable(QString)),this,SLOT(slot_on_updateStatusTable(QString)));
+    connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
+    connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
+    m_can.init(0);
 //    //for test only
 //    _CANReady = true;
-//     //_can8900.CAN_Init(0);
+    //     //_can8900.CAN_Init(0);
 }
 
-
-void MainWindow::slot_on_initSurface()
+void MainWindow::slot_on_initSICK400()
 {
-    m_surfaceComm.init();
-    connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
-    connect(this,SIGNAL(sig_informInfo2surface(QVector<int>)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(QVector<int>)));
-    connect(&m_surfaceComm,SIGNAL(sig_informMainwindow(QVector<int>)),this,SLOT(slot_on_surfaceUpdate(QVector<int>)));
+    connect(&m_sick400, SIGNAL(sig_statusTable(QString)), this, SLOT(slot_on_updateStatusTable(QString)));
+    if(m_sick400.init("SICK400","192.168.1.52",2111))
+    {
+        m_sick400.continuousStart();
+    }
+}
 
-    m_timer_surface.start(2000);
-    emit sig_statusTable("init surface!");
+void MainWindow::slot_on_stopSICK400()
+{
+    m_sick400.continuousStop();
 }
 
 void MainWindow::slot_on_readFrame()
@@ -167,6 +172,20 @@ void MainWindow::slot_on_readFrame()
     m_thread_CAN.start();
     //_can8900.read_message();
 }
+
+
+void MainWindow::slot_on_initSurface()
+{
+    m_surfaceComm.init("192.168.1.3",6001);
+    connect(&m_timer_surface,SIGNAL(timeout()),&m_surfaceComm,SLOT(slot_doWork()));
+    connect(this,SIGNAL(sig_informInfo2surface(CYJData)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(CYJData)));
+    connect(&m_surfaceComm,SIGNAL(sig_informMainwindow(CYJData)),this,SLOT(slot_on_surfaceUpdate(CYJData)));
+
+    m_timer_surface.start(50);
+    //emit sig_statusTable("init surface!");
+}
+
+
 //only for test
 void MainWindow::slot_on_sendFrame()
 {
@@ -231,112 +250,15 @@ INFORM:
 *************************/
 void MainWindow::slot_on_mainTimer_timeout()
 {
-    /*
-     * UDP to surface
-     * ************************************************************************/
-    QVector<int> vec;
-    int data = 0;
-     /************1th byte********************/
-    //direction
-    if(m_direction==Forward)
-    {
-        data += 1;
-    }
-    else
-    {
-        data += 2;
-    }
-    //is neutralGear
-    data += 4*m_isNeutralGear;
-    //brake
-    data += 8*m_isBraking;
-    //emergency brake
-    data += 16*m_isEmergencyStop;
-    //main light
-    data += 32*m_isMainLight;
-    //horning
-    data += 64*m_isHorning;
-    vec.push_back(data);
-    /************2th byte********************/
-    data = 0;
-    //control mode
-    switch (m_controlMode)
-    {
-    case Local:
-         data += 0;//00
-        break;
-    case Visible:
-         data += 1;//01
-        break;
-    case Remote:
-         data += 2;//10
-        break;
-    case Auto:
-         data += 3;//11
-        break;
-    default:
-        break;
-    }
-    //engine start or not
-    if(m_isEngineStarted)
-    {
-        data += 4;
-    }
-    else
-    {
-        data += 8;
-    }
-    //engine switch medium
-    if(m_isEngineswitchMedium)
-    {
-        data += 16;
-    }
-    //earth fault
-    if(m_isEarthFault)
-    {
-        data += 32;
-    }
-    //integrated fault
-    if(m_isIntegratedFault)
-    {
-        data += 64;
-    }
-    //over temperature fault
-    if(m_isOverTemperutureFault)
-    {
-        data += 128;
-    }
-    vec.push_back(data);
-    /************3th byte*************  *******/
-    vec.push_back(m_bucketUp);
-    /************4th byte********************/
-    vec.push_back(m_bucketDown);
-    /************5th byte********************/
-    vec.push_back(m_tipingBucket);
-    /************6th byte********************/
-    vec.push_back(m_backBucket);
-    /************7th byte********************/
-    vec.push_back(m_turnLeft);
-    /************8th byte********************/
-    vec.push_back(m_turnRight);
-    /************9th byte********************/
-    vec.push_back(m_accelerator);
-    /************10th byte********************/
-    vec.push_back(m_deaccelerator);
-    /************11th byte********************/
-    vec.push_back(m_velocity);
-    /************12th byte********************/
-    vec.push_back(m_engineSpeed);
-    /************13th byte********************/
-    vec.push_back(m_spliceAngle);
-    /************14th byte********************/
-    vec.push_back(m_waterTemperature);
-    /************15th byte********************/
-    vec.push_back(m_alarm);
-    emit sig_informInfo2surface(vec);
-    /***************surface end*********************/
-/*****************************************************************************/
-    /*
+    //to surface,other are updated from CAN
+    m_cyjData_actual.startdata1 = 0xAA;
+    m_cyjData_actual.startdata2 = 0x55;
+    m_cyjData_actual.forward = (m_direction==Forward);
+    m_cyjData_actual.backward = (m_direction==Backward);
+    m_cyjData_actual.enddata = 0xFF;
+    emit sig_informInfo2surface(m_cyjData_actual);
+    checkControlMode();
+   /*
      *notify algorithm
      * *********************************************/
     if(m_controlMode==Auto)
@@ -358,39 +280,71 @@ void MainWindow::slot_on_mainTimer_timeout()
     case Remote:
         {
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 0x55;
-        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
-        int temp = m_surface_control_vec.at(1)/4;
-        data[2] = 4*temp;
-        data[3] = m_surface_control_vec.at(3);
-        data[4] = m_surface_control_vec.at(4);
-        data[5] = m_surface_control_vec.at(5);
-        data[6] = m_surface_control_vec.at(6);
-        data[7] = m_surface_control_vec.at(7);
-        //m_can.slot_on_sendFrame(0x304,8,data);
-        data[0] = m_surface_control_vec.at(8);
-        data[1] = m_surface_control_vec.at(9);
-        data[2] = m_surface_control_vec.at(10);
+        data[0] = m_cyjData_surface.forward +
+                2*m_cyjData_surface.backward +
+                4*m_cyjData_surface.neutral +
+                8*m_cyjData_surface.stop +
+                16*m_cyjData_surface.scram +
+                32*m_cyjData_surface.light +
+                64*m_cyjData_surface.horn +
+                128*m_cyjData_surface.zero;
+//        qDebug()<<"===========================================>";
+//        qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
+//        qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
+//        qDebug()<<"data from surface neutral:"<<m_cyjData_surface.neutral;
+//        qDebug()<<"data from surface stop:"<<m_cyjData_surface.stop;
+//        qDebug()<<"data from surface scram:"<<m_cyjData_surface.scram;
+//        qDebug()<<"data from surface light:"<<m_cyjData_surface.light;
+//        qDebug()<<"data from surface horn:"<<m_cyjData_surface.horn;
+//        qDebug()<<"data[0]:"<<data[0];
+        data[1] = 4*m_cyjData_surface.start +
+                8*m_cyjData_surface.flameout +
+                16*m_cyjData_surface.middle +
+                32*m_cyjData_surface.warn1 +
+                64*m_cyjData_surface.warn2 +
+                128*m_cyjData_surface.warn3;
+
+        data[2] = m_cyjData_surface.rise;
+        data[3] = m_cyjData_surface.fall;
+        data[4] = m_cyjData_surface.turn;
+        data[5] = m_cyjData_surface.back;
+        data[6] = m_cyjData_surface.left;
+        data[7] = m_cyjData_surface.right;
+        m_can.slot_on_sendFrame(0x191,8,data);
+        data[0] = m_cyjData_surface.acc;
+        data[1] = m_cyjData_surface.deacc;
+        data[2] = 0;
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        //m_can.slot_on_sendFrame(0x305,8,data);
+        m_can.slot_on_sendFrame(0x291,8,data);
         break;
         }
     case Auto:
         {
         m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = 0x55;
-        data[1] = m_surface_control_vec.at(1);//include forward,neutralGear etc.
-        int temp = m_surface_control_vec.at(1)/4;
-        data[2] = 4*temp;
-        data[3] = m_surface_control_vec.at(3);
-        data[4] = m_surface_control_vec.at(4);
-        data[5] = m_surface_control_vec.at(5);
-        data[6] = m_surface_control_vec.at(6);
+        data[0] = m_cyjData_surface.forward +
+                2*m_cyjData_surface.back +
+                4*m_cyjData_surface.neutral +
+                8*m_cyjData_surface.stop +
+                16*m_cyjData_surface.scram +
+                32*m_cyjData_surface.light +
+                64*m_cyjData_surface.horn +
+                128*m_cyjData_surface.zero;
+        data[1] = 4*m_cyjData_surface.start +
+                8*m_cyjData_surface.flameout +
+                16*m_cyjData_surface.middle +
+                32*m_cyjData_surface.warn1 +
+                64*m_cyjData_surface.warn2 +
+                128*m_cyjData_surface.warn3;
+        data[2] = m_cyjData_surface.rise;
+        data[3] = m_cyjData_surface.fall;
+        data[4] = m_cyjData_surface.turn;
+        data[5] = m_cyjData_surface.back;
+        data[6] = m_cyjData_surface.left;
         data[7] = m_algorithm.left();
        // m_can.slot_on_sendFrame(0x304,8,data);
         data[0] = m_algorithm.right();
@@ -415,12 +369,12 @@ void MainWindow::slot_on_mainTimer_timeout()
     //emit sig_informDirection(Backward);
 
     //UI Update:update vehicle params
-    ui->label_spliceAngle->setText(QString::number(m_spliceAngle));
-    ui->label_velocity->setText(QString::number(m_velocity));
+    ui->label_spliceAngle->setText(QString::number(m_cyjData_actual.spliceAngle));
+    ui->label_velocity->setText(QString::number(m_cyjData_actual.speed));
     ui->label_courseAngle->setText(QString::number(m_courseAngle));
-    ui->label_engineSpeed->setText(QString::number(m_engineSpeed));
+    ui->label_engineSpeed->setText(QString::number(m_cyjData_actual.engine));
     ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
-    ui->label_gear->setText(QString::number(m_isNeutralGear));
+    ui->label_gear->setText(QString::number(m_cyjData_actual.neutral));
     switch (m_controlMode)
     {
     case Local:
@@ -447,6 +401,28 @@ void MainWindow::slot_on_mainTimer_timeout()
     {
         ui->label_direction->setText("Backward");
     }
+    //console output
+ //   qDebug()<<"=========================actual data are:";
+//    qDebug()<<"neutral:"<<m_cyjData_actual.neutral;
+//    qDebug()<<"stop:"<<m_cyjData_actual.stop;
+//    qDebug()<<"scram:"<<m_cyjData_actual.scram;
+//    qDebug()<<"light:"<<m_cyjData_actual.light;
+//    qDebug()<<"horn:"<<m_cyjData_actual.horn;
+//    qDebug()<<"start:"<<m_cyjData_actual.start;
+//    qDebug()<<"flameout:"<<m_cyjData_actual.flameout;
+//    qDebug()<<"middle:"<<m_cyjData_actual.middle;
+//    qDebug()<<"rise:"<<m_cyjData_actual.rise;
+//    qDebug()<<"fall:"<<m_cyjData_actual.fall;
+//    qDebug()<<"turn:"<<m_cyjData_actual.turn;
+//    qDebug()<<"back:"<<m_cyjData_actual.back;
+//    qDebug()<<"left:"<<m_cyjData_actual.left;
+//    qDebug()<<"right:"<<m_cyjData_actual.right;
+//    qDebug()<<"acc:"<<m_cyjData_actual.acc;
+//    qDebug()<<"deacc:"<<m_cyjData_actual.deacc;
+//    qDebug()<<"speed:"<<m_cyjData_actual.speed;
+//    qDebug()<<"engine:"<<m_cyjData_actual.engine;
+//    qDebug()<<"splice:"<<m_cyjData_actual.spliceAngle;
+  //  qDebug()<<"=============================================";
 }
 
 void MainWindow::slot_on_setAlgorithm()
@@ -527,10 +503,10 @@ void MainWindow::slot_on_updateForwardRSSI(QVector<int> vec)
 }
 void MainWindow::slot_on_updateBackwardDIST(QVector<int> vec)
 {
-	if (m_direction == Backward)
-	{
-		emit sig_2AlgorithmDIST(vec);
-	}
+    if (m_direction == Backward)
+    {
+        emit sig_2AlgorithmDIST(vec);
+    }
 }
 void MainWindow::slot_on_updateBackwardRSSI(QVector<int> vec)
 {
@@ -564,94 +540,178 @@ void MainWindow::slot_on_updateBackwardLateralOffset(int offset)
 		m_lateralOffset = offset;
 }
 
-void MainWindow::slot_on_updateCAN306(QVector<int> vec)
+void MainWindow::slot_on_updateCAN304(QVector<int> vec)
 {
+    //qDebug()<<"CAN304:"<<vec;
     if(vec.size()<8)
     {
         return;
     }
+    //extract Data[0]
+    if((vec.at(0)/4)%2==1)
+    {
+        m_cyjData_actual.neutral = 1;
+    }
+    else
+    {
+        m_cyjData_actual.neutral = 0;
+    }
+    if((vec.at(0)/4)%2==1)
+    {
+        m_cyjData_actual.stop = 1;
+    }
+    else
+    {
+        m_cyjData_actual.stop = 0;
+    }
+
+    if((vec.at(0)/8)%2==1)
+    {
+        m_cyjData_actual.scram = 1;
+    }
+    else
+    {
+        m_cyjData_actual.scram = 0;
+    }
+
+    if((vec.at(0)/16)%2==1)
+    {
+        m_cyjData_actual.light = 1;
+    }
+    else
+    {
+        m_cyjData_actual.light = 0;
+    }
+
+    if((vec.at(0)/32)%2==1)
+    {
+        m_cyjData_actual.horn = 1;
+    }
+    else
+    {
+        m_cyjData_actual.horn = 0;
+    }
+    //reserved
+    m_cyjData_actual.zero = (vec.at(0)/64)%2;
     //extract control mode
-    switch(vec.at(2)%4)
+    switch(vec.at(1)%4)
     {
     case 0:
         m_controlMode = Local;
+        m_cyjData_actual.remoteLocal = 0;
+        m_cyjData_actual.automanual = 0;
         break;
     case 1:
         m_controlMode = Visible;
+        m_cyjData_actual.remoteLocal = 0;
+        m_cyjData_actual.automanual = 0;
         break;
     case 2:
         m_controlMode = Remote;
+        m_cyjData_actual.remoteLocal = 1;
+        m_cyjData_actual.automanual = 0;
         break;
     case 3:
         m_controlMode = Auto;
+        m_cyjData_actual.remoteLocal = 1;
+        m_cyjData_actual.automanual = 1;
         break;
     default:
         break;
     }
     //extract engine start
-    if((vec.at(2)/4)%2==1)
-    {
-        m_isEngineStarted = true;
-    }
-    else
-    {
-        m_isEngineStarted = false;
-    }
+    m_cyjData_actual.start = (vec.at(1)/2)%2;
     //extract engine stop
-    if((vec.at(2)/8)%2==1)
-    {
-        m_isEngineStarted = false;
-    }
-    else
-    {
-        m_isEngineStarted = true;
-    }
+    m_cyjData_actual.flameout = (vec.at(1)/4)%2;
     //extract engine switch medium
-    if((vec.at(2)/16)%2==1)
-    {
-        m_isEngineswitchMedium = true;
-    }
-    else
-    {
-        m_isEngineStarted = false;
-    }
-    m_bucketUp = vec.at(3);
-    m_bucketDown = vec.at(4);
-    m_tipingBucket = vec.at(5);
-    m_backBucket = vec.at(6);
-    m_turnLeft = vec.at(7);
+    m_cyjData_actual.middle = (vec.at(1)/8)%2;
+    //extract warn1
+    m_cyjData_actual.warn1 = (vec.at(1)/16)%2;
+    //extract warn2
+    m_cyjData_actual.warn2 = (vec.at(1)/32)%2;
+    //extract warn3
+    m_cyjData_actual.warn3 = (vec.at(1)/64)%2;
 
-
+    m_cyjData_actual.rise = vec.at(2);
+    m_cyjData_actual.fall = vec.at(3);
+    m_cyjData_actual.turn = vec.at(4);
+    m_cyjData_actual.back = vec.at(5);
+    m_cyjData_actual.left = vec.at(6);
+    m_cyjData_actual.right = vec.at(7);
 }
 
-void MainWindow::slot_on_updateCAN307(QVector<int> vec)
+void MainWindow::slot_on_updateCAN305(QVector<int> vec)
 {
+    //qDebug()<<"CAN305:"<<vec;
     if(vec.size()<8)
     {
         return;
     }
-    m_turnRight = vec.at(0);
-    m_accelerator = vec.at(1);
-    m_deaccelerator = vec.at(2);
-    m_velocity = vec.at(3);
-    m_engineSpeed = vec.at(4);
-    m_spliceAngle = vec.at(5);
-//    m_waterTemperature = vec.at(6);
-//    m_alarm = vec.at(7);
+    m_cyjData_actual.acc = vec.at(0);
+    m_cyjData_actual.deacc = vec.at(1);
+    m_cyjData_actual.speed = vec.at(2);
+    m_cyjData_actual.engine = vec.at(3);
+    m_cyjData_actual.spliceAngle = vec.at(4);
+    m_cyjData_actual.oil = vec.at(5);
     m_mileMeter = vec.at(6)*256 + vec.at(7);
 }
 
-void MainWindow::slot_on_surfaceUpdate(QVector<int> vec)
+void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
 {
-    if(vec.size()!=11)//receive control from surface
+    m_cyjData_surface.forward = cyj.forward;
+    m_cyjData_surface.backward = cyj.backward;
+    m_cyjData_surface.neutral = cyj.neutral;
+    m_cyjData_surface.stop = cyj.stop;
+    m_cyjData_surface.scram = cyj.scram;
+    m_cyjData_surface.light = cyj.light;
+    m_cyjData_surface.horn = cyj.horn;
+    m_cyjData_surface.zero = cyj.zero;
+    m_cyjData_surface.automanual = cyj.automanual;
+    m_cyjData_surface.remoteLocal = cyj.remoteLocal;
+    m_cyjData_surface.start = cyj.start;
+    m_cyjData_surface.flameout = cyj.flameout;
+    m_cyjData_surface.middle = cyj.middle;
+    m_cyjData_surface.rise = cyj.rise;
+    m_cyjData_surface.fall = cyj.fall;
+    m_cyjData_surface.turn = cyj.turn;
+    m_cyjData_surface.back = cyj.back;
+    m_cyjData_surface.left = cyj.left;
+    m_cyjData_surface.right = cyj.right;
+    m_cyjData_surface.acc = cyj.acc;
+    m_cyjData_surface.deacc = cyj.deacc;
+
+
+    if(m_cyjData_surface.automanual==0&&m_cyjData_surface.remoteLocal==0)
     {
-        return;
+        m_controlMode = Local;
     }
-    if(vec.at(0)!=85)//first data is const 0x55
+    else if(m_cyjData_surface.automanual==0&&m_cyjData_surface.remoteLocal==0)
     {
-        return;
+
     }
-    m_surface_control_vec = vec;
+
+//    qDebug()<<"===========================================>";
+//    qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
+//    qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
+//    qDebug()<<"data from surface neutral:"<<m_cyjData_surface.neutral;
+//    qDebug()<<"data from surface stop:"<<m_cyjData_surface.stop;
+//    qDebug()<<"data from surface scram:"<<m_cyjData_surface.scram;
+//    qDebug()<<"data from surface light:"<<m_cyjData_surface.light;
+//    qDebug()<<"data from surface horn:"<<m_cyjData_surface.horn;
+//    qDebug()<<"data from surface zero:"<<m_cyjData_surface.zero;
+//    qDebug()<<"data from surface start:"<<m_cyjData_surface.start;
+//    qDebug()<<"data from surface flameout:"<<m_cyjData_surface.flameout;
+//    qDebug()<<"data from surface middle:"<<m_cyjData_surface.middle;
+//    qDebug()<<"data from surface remoteLocal:"<<m_cyjData_surface.remoteLocal;
+//    qDebug()<<"data from surface automanual:"<<m_cyjData_surface.automanual;
+//    qDebug()<<"data from surface rise:"<<m_cyjData_surface.rise;
+//    qDebug()<<"data from surface fall:"<<m_cyjData_surface.fall;
+//    qDebug()<<"data from surface turn:"<<m_cyjData_surface.turn;
+//    qDebug()<<"data from surface back:"<<m_cyjData_surface.back;
+//    qDebug()<<"data from surface left:"<<m_cyjData_surface.left;
+//    qDebug()<<"data from surface right:"<<m_cyjData_surface.right;
+//    qDebug()<<"data from surface acc:"<<m_cyjData_surface.acc;
+//    qDebug()<<"data from surface deacc:"<<m_cyjData_surface.deacc;
 }
 
 //easy to debug:all info shows into the statusBar

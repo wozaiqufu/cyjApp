@@ -2,29 +2,33 @@
 #define SURFACECOMMUNICATION_H
 
 #include <QObject>
-#include <QUdpSocket>
+#include <QTcpSocket>
+#include "cyjdata.h"
 
 class SurfaceCommunication : public QObject
 {
     Q_OBJECT
 public:
     explicit SurfaceCommunication(QObject *parent = 0);
-    void init();
-private:
-    void extractData(const QByteArray &array);
+    void init(const QString ip, const int port);
 signals:
     void sig_statusTable(QString);
-    void sig_informMainwindow(QVector<int>);
+    void sig_informMainwindow(CYJData);
 public slots:
-    void slot_doWork();
-    void slot_on_mainwindowUpdate(QVector<int> vec);
-    void readPendingDatagrams();
+    void slot_doWork();//send data to surface
+    void slot_on_mainwindowUpdate(CYJData cyj);
+private slots:
+    void slot_on_readMessage();
 private:
-    qint16 m_port;
-    QUdpSocket m_UdpSocket;
-    QUdpSocket m_UdpSocket_sender;
-    QHostAddress m_hostAddr;
-    QVector<int> m_mainwindowData;//to be sent to surface
+    QTcpSocket          m_tcpSocket;
+    QString             m_hostIp;
+    int                 m_port;
+    bool                m_isOn;
+    CYJData             m_cyjData_surface;
+    CYJData             m_cyjData_actual;
+    QVector<int>        m_mainwindowData;//to be sent to surface
+    static const int    CONNECTMAXDELAY = 2000;
+    static const int    NUMBERONEFRAME = 18;//18 bytes of data
 };
 
 #endif // SURFACECOMMUNICATION_H

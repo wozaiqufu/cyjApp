@@ -71,17 +71,17 @@ public slots:
     void slot_on_updateSICKRSSI(QVector<int> vec);
 	void slot_on_updateControlInfo(QVector<int> vec);
 private:
-    bool            m_isAuto;
-    QVector<int>    m_SICKdata;
-    QVector<int>    m_SICKRSSI;
-	QVector<int>	m_mile_acc_deacc_left_right;//signal from mainwindow
-	int				m_mile_saved;//saved data into path.txt
-	int				m_mile_current;//current mile 
-    StageType       m_stage;//teach mode or auto mode
-    AlgorithmType   m_type;//PID or TrackMemory
-    TrackMemory     *p_track;
-    PID             *p_pid;
-	const int		m_mileDelta = 20;//path.txt mile increment is 20cm
+    bool                m_isAuto;
+    QVector<int>        m_SICKdata;
+    QVector<int>        m_SICKRSSI;
+    QVector<int>        m_mile_acc_deacc_left_right;//signal from mainwindow
+    int                 m_mile_saved;//saved data into path.txt
+    int                 m_mile_current;//current mile
+    StageType           m_stage;//teach mode or auto mode
+    AlgorithmType       m_type;//PID or TrackMemory
+    TrackMemory         *p_track;
+    PID                 *p_pid;
+    static const int    MILEDELTA = 20;//path.txt mile increment is 20cm
 };
 
 #endif // AUTOALGORITHM_H

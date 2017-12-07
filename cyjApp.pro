@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql network
+QT       += core gui sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = cyjApp
@@ -17,13 +17,18 @@ SOURCES += main.cpp\
     autoalgorithm.cpp \
     pid.cpp \
     trackmemory.cpp \
-    SICK.cpp
+    CAN.cpp \
+    SICK511.cpp \
+    sick400.cpp
 
 HEADERS  += mainwindow.h \
     surfacecommunication.h \
     autoalgorithm.h \
     pid.h \
     trackmemory.h \
-    SICK.h
+    CAN.h \
+    SICK511.h \
+    cyjdata.h \
+    sick400.h
 
 FORMS    += mainwindow.ui

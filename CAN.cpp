@@ -5,7 +5,7 @@ CAN::CAN(QObject *parent) : QObject(parent)
   ,m_s(0) {
 }
 
-bool CAN::initCAN(const int portIndex)
+bool CAN::init(const int portIndex)
 {
     int ret;
     if(0 == portIndex)
@@ -22,8 +22,8 @@ bool CAN::initCAN(const int portIndex)
 
     /*********************step 2*******************************************************************/
     //bind socket to specific CAN port
-    //strcpy(m_ifr.ifr_name,"can0");
-    strcpy(m_ifr.ifr_name,"can1");
+    strcpy(m_ifr.ifr_name,"can0");
+    //strcpy(m_ifr.ifr_name,"can1");
     qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
     ret = ioctl(m_s,SIOCGIFINDEX,&m_ifr);
     if(ret<0)
@@ -36,6 +36,7 @@ bool CAN::initCAN(const int portIndex)
     ret = bind(m_s,(struct sockaddr*)&m_addr,sizeof(m_addr));
     if(ret<0)
     {
+        qDebug()<<"bind failed!";
         emit sig_statusTable("bind failed!");
         return false;
     }
@@ -58,7 +59,7 @@ void CAN::slot_on_sendFrame(ulong id, uchar length, uchar *data)
     m_frameSend.can_dlc =   length;
     for(uchar i=0; i < length; i++)
     m_frameSend.data[i] = data[i];
-    printFrame(&m_frameSend);
+    //printFrame(&m_frameSend);
     int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
     if (nbytes < 0) {
         emit sig_statusTable("Send message error senddata\n");
@@ -79,25 +80,25 @@ void CAN::slot_dowork()
     if(0 == ret) {
         qDebug()<<"sead failed!";
     }
-    m_CAN306.clear();
-    m_CAN307.clear();
+    m_CAN304.clear();
+    m_CAN305.clear();
     for(int i=0;i<m_frameRecv.can_dlc;i++)
     {
-        if(m_frameRecv.can_id == 0x306)
+        if(m_frameRecv.can_id == 0x304)
         {
-            m_CAN306.push_back(m_frameRecv.data[i]);
+            m_CAN304.push_back(m_frameRecv.data[i]);
         }
-        else if(m_frameRecv.can_id == 0x307)
+        else if(m_frameRecv.can_id == 0x305)
         {
-            m_CAN307.push_back(m_frameRecv.data[i]);
+            m_CAN305.push_back(m_frameRecv.data[i]);
         }
         else
         {
             return;
         }
     }
-    emit sigUpdateCAN306(m_CAN306);
-    emit sigUpdateCAN307(m_CAN307);
+    emit sigUpdateCAN304(m_CAN304);
+    emit sigUpdateCAN305(m_CAN305);
     //printFrame(&m_frameRecv);
 }
 
