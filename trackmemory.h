@@ -22,7 +22,7 @@ public:
      * @input param dist:SICK distance data
      * @input param rssi:SICK RSSI     data
      * */
-    QVector<int>  update(int mile, QVector<int> dist, QVector<int> rssi);
+    QVector<int>  update(int mile, QVector<int> beaconLength);
     /*
      * data are saved into path.txt and beacon.txt in the TEACH stage
      * @intput param fileName:file name of saving
@@ -34,12 +34,11 @@ public:
 	* @intput param fileName:which file data to be loaded
 	* */
 	bool loadData(const QString fileName);
-	/*
-	* whether beacon is lost
-	* @
-	* @output:if beacon is lost,return true
-	* */
-	bool isBeaconLost(QVector<int> dist, QVector<int> rssi);
+    /*
+    * match with loaded beacon length
+    * @intput param vec:SICK400 outputs beacon length
+    * */
+    bool matchBeacon(const QVector<int> vec);
 	/*
 	* current beacon width
 	* @input

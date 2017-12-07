@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QStringList>
 #include <QByteArray>
+#include <QTime>
+
 class TrackMemory;
 class PID;
 
@@ -65,23 +67,26 @@ private:
 signals:
     void sig_statusTable(QString);
 public slots:
-    //if control mode is Auto,receive SICK data
     void slot_on_updateControlMode(bool isAuto);
-    void slot_on_updateSICKDIS(QVector<int> vec);
-    void slot_on_updateSICKRSSI(QVector<int> vec);
+    void slot_on_updateBeaconLength(QVector<int> vec);
+    void slot_on_updateCourseAngle(int angle);
+    void slot_on_updateLateralOffset(int of);
 	void slot_on_updateControlInfo(QVector<int> vec);
 private:
+    int                 m_courseAngle;
+    int                 m_lateralOffset;
+    QVector<int>        m_beaconLength;
     bool                m_isAuto;
-    QVector<int>        m_SICKdata;
-    QVector<int>        m_SICKRSSI;
     QVector<int>        m_mile_acc_deacc_left_right;//signal from mainwindow
     int                 m_mile_saved;//saved data into path.txt
     int                 m_mile_current;//current mile
     StageType           m_stage;//teach mode or auto mode
     AlgorithmType       m_type;//PID or TrackMemory
+    QTime               m_time;
     TrackMemory         *p_track;
     PID                 *p_pid;
     static const int    MILEDELTA = 20;//path.txt mile increment is 20cm
+    static const double RATIO = 0.8;//k1*track + k2*pid k2=RATIO
 };
 
 #endif // AUTOALGORITHM_H

@@ -33,8 +33,6 @@ signals:
     void sig_CAN(ulong id, uchar length, uchar *data);
     void sig_stopPermanentReq();
     void sig_informDirection(int);
-	void sig_2AlgorithmRSSI(QVector<int>);
-	void sig_2AlgorithmDIST(QVector<int>);
     void sig_informInfo2surface(CYJData);
     void sig_autoInfo2Algorithm(bool);
     void sig_informAlgrithmMile(int);
@@ -60,14 +58,6 @@ private slots:
     void slot_on_closeFile();
 public slots:
     void slot_on_updateStatusTable(QString qstr);
-	void slot_on_updateForwardDIST(QVector<int> vec);
-	void slot_on_updateForwardRSSI(QVector<int> vec);
-	void slot_on_updateBackwardDIST(QVector<int> vec);
-	void slot_on_updateBackwardRSSI(QVector<int> vec);
-    void slot_on_updateForwardCourseAngle(int angle);
-    void slot_on_updateForwardLateralOffset(int offset);
-	void slot_on_updateBackwardCourseAngle(int angle);
-	void slot_on_updateBackwardLateralOffset(int offset);
     void slot_on_updateCAN304(QVector<int> vec);
     void slot_on_updateCAN305(QVector<int> vec);
     void slot_on_surfaceUpdate(CYJData cyj);

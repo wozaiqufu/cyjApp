@@ -17,6 +17,7 @@ class SICK511 : public QObject
 		void	continuousStart();
 		void	continuousStop();
 		bool	isOn();
+        void    useData(const bool b);
 		QString name()	const;
 		QString ip()	const;
 		int		port()	const;
@@ -31,8 +32,6 @@ private:
 signals:
     void	sigUpdateCourseAngle(int);
     void	sigUpdateLateralOffset(int);
-    void	sigUpdateDIST(QVector<int>);
-    void	sigUpdateRSSI(QVector<int>);
     void	sig_statusTable(QString);
 private slots:
     void slot_on_readMessage();
@@ -42,6 +41,7 @@ private:
 	QString m_ip;
 	int		m_port;
 	bool	m_isOn;
+    bool    m_isInForward;
     static const double	m_PI = 3.141592653;
     static const int	MILSECONDSWAIT = 2000;//wait maximum seconds when establish the TCP connection
     QByteArray          m_dataRecieved;

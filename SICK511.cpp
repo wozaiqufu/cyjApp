@@ -41,7 +41,12 @@ bool SICK511::init(const QString name, const QString ip, const int port)
 
 bool SICK511::isOn()
 {
-	return m_isOn == true;
+    return m_isOn == true;
+}
+
+void SICK511::useData(const bool b)
+{
+    m_isInForward = b;
 }
 
 void SICK511::continuousStart()
@@ -63,6 +68,7 @@ void SICK511::continuousStop()
 void SICK511::slot_on_readMessage(){
 	//QDataStream in(m_tcpSocket);
 	//qDebug()<<"slot_on_readMessage is triigerred!";
+    if(!m_isInForward) return;
 	m_dataRecieved.clear();
 	m_dataRecieved = m_tcpSocket.readAll();
 	//one data has 2 bytes
@@ -124,8 +130,6 @@ void SICK511::extractDISTData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
-     //signal to surface obj
-     emit sigUpdateDIST(m_DISTdata);
 	 //qDebug() << "dist of " + m_name + ":" << m_DISTdata;
      //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
 }
@@ -175,8 +179,6 @@ void SICK511::extractRSSIData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
-     //signal to surface obj
-     emit sigUpdateRSSI(m_RSSIdata);
      //qDebug()<<"\n"<<"m_RSSIdata_forward in decimal:"<<m_RSSIdata_forward;
      //qDebug()<<"size of m_RSSIdata_forward:"<<m_RSSIdata_forward.size();
 }

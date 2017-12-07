@@ -54,21 +54,15 @@ _CANReady(false)
     m_timer_main.start(30);
     //signals:mainwindow,slots:autoAlgorithm
     connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
-    //signals:SICK,slots:autoAlgorithm
-
-	//signals:SICK,slots:mainwindow
-    connect(&m_sick511_f, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateForwardDIST(QVector<int> vec)));
-    connect(&m_sick511_f, SIGNAL(sigUpdateRSSI(QVector<int>)), this, SLOT(slot_on_updateForwardRSSI(QVector<int> vec)));
-    connect(&m_sick511_b, SIGNAL(sigUpdateDIST(QVector<int>)), this, SLOT(slot_on_updateBackwardDIST(QVector<int> vec)));
-    connect(&m_sick511_b, SIGNAL(sigUpdateRSSI(QVector<int>)), this, SLOT(slot_on_updateBackwardRSSI(QVector<int> vec)));
-	connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateForwardCourseAngle(int)));
-	connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateForwardLateralOffset(int)));
-	connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), this, SLOT(slot_on_updateBackwardCourseAngle(int)));
-	connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), this, SLOT(slot_on_updateBackwardLateralOffset(int)));
+    //signals:SICK400,slots:algorithm
+    connect(&m_sick400,SIGNAL(sigUpdateBeaconLength(QVector<int>)),&m_algorithm,SLOT(slot_on_updateBeaconLength(QVector<int>)));
+    //signals:SICK511,slots:algorithm
+    connect(&m_sick511_f, SIGNAL(sigUpdateCourseAngle(int)), &m_algorithm, SLOT(slot_on_updateCourseAngle(int)));
+    connect(&m_sick511_f, SIGNAL(sigUpdateLateralOffset(int)), &m_algorithm, SLOT(slot_on_updateLateralOffset(int)));
+    connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), &m_algorithm, SLOT(slot_on_updateCourseAngle(int)));
+    connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), &m_algorithm, SLOT(slot_on_updateLateralOffset(int)));
     //signals:MainWindow,slots:Algorithm
 	connect(this, SIGNAL(sig_informAlgrithmMile(int)), &m_algorithm, SLOT(slot_on_updateMile(int))); 
-	connect(this, SIGNAL(sig_2AlgorithmRSSI(QVector<int>)), &m_algorithm, SLOT(slot_on_updateSICKRSSI(QVector<int>)));
-	connect(this, SIGNAL(sig_2AlgorithmDIST(QVector<int>)), &m_algorithm, SLOT(slot_on_updateSICKDIS(QVector<int>)));
 }
 
 MainWindow::~MainWindow()
@@ -485,59 +479,6 @@ void MainWindow::slot_on_closeFile()
 {
     //m_algorithm.closeFile("path.txt");
     //m_algorithm.closeFile("beacon.txt");
-}
-
-void MainWindow::slot_on_updateForwardDIST(QVector<int> vec)
-{
-	if (m_direction == Forward)
-	{
-		emit sig_2AlgorithmDIST(vec);
-	}
-}
-void MainWindow::slot_on_updateForwardRSSI(QVector<int> vec)
-{
-	if (m_direction == Forward)
-	{
-		emit sig_2AlgorithmRSSI(vec);
-	}
-}
-void MainWindow::slot_on_updateBackwardDIST(QVector<int> vec)
-{
-    if (m_direction == Backward)
-    {
-        emit sig_2AlgorithmDIST(vec);
-    }
-}
-void MainWindow::slot_on_updateBackwardRSSI(QVector<int> vec)
-{
-	if (m_direction == Backward)
-	{
-		emit sig_2AlgorithmRSSI(vec);
-	}
-}
-
-void MainWindow::slot_on_updateForwardCourseAngle(int angle)
-{
-	if (m_direction == Forward)
-		m_courseAngle = angle;
-}
-
-void MainWindow::slot_on_updateForwardLateralOffset(int offset)
-{
-	if (m_direction == Forward)
-		m_lateralOffset = offset;
-}
-
-void MainWindow::slot_on_updateBackwardCourseAngle(int angle)
-{
-	if (m_direction == Backward)
-		m_courseAngle = angle;
-}
-
-void MainWindow::slot_on_updateBackwardLateralOffset(int offset)
-{
-	if (m_direction == Backward)
-		m_lateralOffset = offset;
 }
 
 void MainWindow::slot_on_updateCAN304(QVector<int> vec)

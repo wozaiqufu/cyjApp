@@ -22,6 +22,7 @@ public:
     int		port()	const;
 signals:
     void	sig_statusTable(QString);
+    void    sigUpdateBeaconLength(QVector<int> vec);
 private:
     void        extractData();
     QVector<int>  beaconLength(const int threshold);

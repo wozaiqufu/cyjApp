@@ -25,7 +25,7 @@ void autoAlgorithm::update()
 			p_track->saveData("path.txt", m_mile_acc_deacc_left_right);
 			m_mile_current = m_mile_acc_deacc_left_right.at(0);
 		}
-		if (p_track->isBeaconLost(m_SICKdata, m_SICKRSSI))
+        if (p_track->matchBeacon(m_beaconLength))
 		{
 			QVector<int> vec;
 			vec.push_back(p_track->currentBeacon());
@@ -35,6 +35,10 @@ void autoAlgorithm::update()
 		}
 		break;
 	case autoAlgorithm::Auto:
+        p_track->loadData("path.txt");
+        p_track->loadData("beacon.txt");
+        //double elapsedTime = m_time.restart()/1000.0;
+        //QVector<int> track = p_track->update(m_mile_current,m_beaconLength);
 		break;
 	default:
 		break;
@@ -95,37 +99,19 @@ void autoAlgorithm::slot_on_updateControlMode(bool isAuto)
     m_isAuto = isAuto;
 }
 
-void autoAlgorithm::slot_on_updateSICKDIS(QVector<int> vec)
+void autoAlgorithm::slot_on_updateBeaconLength(QVector<int> vec)
 {
-//    if(m_isAuto)
-//    {
-//        m_SICKdata = vec;
-//    }
-//    else
-//    {
-//        return;
-//    }
-   if(vec.size()!=361)
-   {
-       return;
-   }
-   else
-   {
-       m_SICKdata = vec;
-   }
+    m_beaconLength = vec;
 }
 
-void autoAlgorithm::slot_on_updateSICKRSSI(QVector<int> vec)
+void autoAlgorithm::slot_on_updateCourseAngle(int angle)
 {
-    //qDebug()<<"slot_on_updateSICKRSSI";
-    if(vec.size()!=361)
-    {
-        return;
-    }
-    m_SICKRSSI = vec;
-    //qDebug()<<"the value of RSSI is:"<<m_SICKRSSI;
-   // qDebug()<<"the size of RSSI is:"<<m_SICKRSSI.size();
-    //qDebug()<<"beacon length are:"<<beaconLength(m_beaconRSSIThreshold);
+    m_courseAngle = angle;
+}
+
+void autoAlgorithm::slot_on_updateLateralOffset(int of)
+{
+    m_courseAngle = of;
 }
 
 void autoAlgorithm::slot_on_updateControlInfo(QVector<int> vec)

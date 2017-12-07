@@ -106,11 +106,13 @@ void SICK400::extractData()
         m_distance.append(dis);
         m_ris.append(ba3);
     }
+
+    emit sigUpdateBeaconLength(beaconLength(250));
     //qDebug()<<"SICK400 size of distance:"<<m_distance.size();
     //qDebug()<<"SICK400 size of ris are:"<<m_ris.size();
     //qDebug()<<"SICK400 distance are:"<<m_distance;
     //qDebug()<<"SICK400 ris are:"<<m_ris;
-    qDebug()<<"SICK400 beacon length are:"<<beaconLength(250);
+    //qDebug()<<"SICK400 beacon length are:"<<beaconLength(250);
 }
 
 QVector<int> SICK400::beaconLength(const int threshold)

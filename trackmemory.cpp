@@ -31,15 +31,15 @@ public:
     TrackMemoryImpl();
     ~TrackMemoryImpl();
     void			init(const int rssiThreshold,const int beaconLengthThr,const int accmax,const int accmin,const int angmax,const int angmin);
-    QVector<int>	update(int mile, QVector<int> dist, QVector<int> rssi);
+    QVector<int>	update(int mile, QVector<int> beaconLength);
     bool			saveData(const QString fileName,QVector<int> vec);
 	bool			loadData(const QString txtName);
+    bool            matchBeacon(const QVector<int> &vec,const double threshold);//m_beaconIndex is updated!
 	bool			isBeaconLost(QVector<int> dist, QVector<int> rssi);
 	int				currentBeacon();
 private:
      QVector<int> beaconLength(QVector<int> dist,QVector<int> rssi,const int delta);
      QVector<int> Pro_binary(QVector<int> vec) const;//for beaconLength use(111001111 filter 00)
-     bool         matchBeacon(const QVector<int> &vec,const double threshold);//m_beaconIndex is updated!
      void         calibMile(const int mile);//using m_beaconIndex get mile in beacon.txt
      QVector<int> matchMile(const int mile);//using m_mile_calib generate acc left and right
      bool         closeAllFile();
@@ -83,9 +83,9 @@ void TrackMemory::init(const int rssiThreshold,const double beaconLengthThr,cons
     m_Impl->init(rssiThreshold,beaconLengthThr,accmax,accmin,angmax,angmin);
 }
 
-QVector<int> TrackMemory::update(int mile, QVector<int> dist, QVector<int> rssi)
+QVector<int> TrackMemory::update(int mile, QVector<int> beaconLength)
 {
-    return m_Impl->update(mile,dist,rssi);
+    return m_Impl->update(mile,beaconLength);
 }
 
 bool TrackMemory::saveData(const QString fileName, QVector<int> vec)
@@ -95,11 +95,12 @@ bool TrackMemory::saveData(const QString fileName, QVector<int> vec)
 
 bool TrackMemory::loadData(const QString fileName)
 {
-	return m_Impl->loadData(fileName);
+    return m_Impl->loadData(fileName);
 }
-bool TrackMemory::isBeaconLost(QVector<int> dist, QVector<int> rssi)
+
+bool TrackMemory::matchBeacon(const QVector<int> vec)
 {
-	return m_Impl->isBeaconLost(dist,rssi);
+    return m_Impl->matchBeacon(vec,0.1);
 }
 
 int	TrackMemory::currentBeacon()
@@ -166,46 +167,20 @@ void TrackMemoryImpl::init(const int rssiThreshold,const int beaconLengthThr,con
         m_angmin = angmin;
 	loadData("beaconRaw.txt");
 	loadData("path.txt");
-	loadData("beacon.txt");
+    loadData("beacon.txt");
 }
 
-QVector<int> TrackMemoryImpl::update(int mile, QVector<int> dist, QVector<int> rssi)
+QVector<int> TrackMemoryImpl::update(int mile, QVector<int> beaconLength)
 {
-    if(matchBeacon(beaconLength(dist,rssi,m_rssiThreshold),m_beaconLengthThreshold))
-    {
-        m_beaconMatchPre = m_beaconMatchPost;
-        m_beaconMatchPost = 1;
-    }
-    else
-    {
-        m_beaconMatchPre = m_beaconMatchPost;
-        m_beaconMatchPost = 0;
-    }
-    switch(m_beaconMatchPost-m_beaconMatchPre)
-    {
-    case -1:
+    if(matchBeacon(beaconLength,0.1))
     {
         calibMile(mile);
         return matchMile(mile);
-        break;
     }
-    case 0:
-    {
-        return matchMile(mile);
-        break;
-    }
-    case 1:
-    {
-        return matchMile(mile);
-        break;
-    }
-	default:
-	{
-		return QVector<int> (0);
-		break;
-	}
-    }
+    else
+        matchMile(mile);
 }
+
  
 bool TrackMemoryImpl::isBeaconLost(QVector<int> dist, QVector<int> rssi)
 {
@@ -555,22 +530,17 @@ QVector<int> TrackMemoryImpl::Pro_binary(QVector<int> vec) const
 
 bool TrackMemoryImpl::matchBeacon(const QVector<int> &vec, const double threshold)
 {
-    int count_Length = 0;
     double relative_error = 0.0;
-    for(int i = 0; i < m_beaconAndMile.size(); ++i)
+    for(int i = 0; i < m_beacon.size(); ++i)
     {
         for(int j = 0; j < vec.size(); ++j)
         {
-            relative_error = static_cast<double>(abs((vec.at(j) - m_beaconAndMile.at(i).width_left))/m_beaconAndMile.at(i).width_left);
+            relative_error = static_cast<double>(abs((vec.at(j) - m_beacon.at(i)))/m_beacon.at(i));
             if(relative_error <= threshold)
             {
-                ++count_Length;
+                m_beaconIndex = i;
+                return true;
             }
-        }
-        if(count_Length == 2)
-        {
-            m_beaconIndex = i;
-            return true;
         }
     }
     return false;
