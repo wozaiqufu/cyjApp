@@ -8,7 +8,8 @@ SICK511::SICK511(QObject* parent)
 m_isOn(false),
 m_numberDataOneSocket(0),
 m_courseAngle(0),
-m_lateralOffset(0)
+m_lateralOffset(0),
+m_isInForward(false)
 {
 	connect(&m_tcpSocket, SIGNAL(readyRead()), this, SLOT(slot_on_readMessage()));
 	connect(&m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slot_on_error(QAbstractSocket::SocketError)));
@@ -103,7 +104,7 @@ void SICK511::extractDISTData()
     //crop Angular step width
     int AngularStep_Begin = startAngle_End + 1;
     QByteArray angularStep = m_dataRecieved.mid(AngularStep_Begin,m_dataRecieved.indexOf(" ",AngularStep_Begin)-AngularStep_Begin);
-	//qDebug()<<"angular step:"<<angularStep;
+    qDebug()<<"angular step:"<<angularStep;
     //crop Number Data
     int NumberData_Begin = m_dataRecieved.indexOf(" ",AngularStep_Begin) + 1;
     QByteArray numberData = m_dataRecieved.mid(NumberData_Begin,m_dataRecieved.indexOf(" ",NumberData_Begin)-NumberData_Begin);
@@ -114,7 +115,7 @@ void SICK511::extractDISTData()
 	m_angleResolution = 180.0 / (m_numberDataOneSocket - 1);
 	//qDebug() << "m_angleResolution is:" << m_angleResolution;
     int data_index = m_dataRecieved.indexOf(" ",NumberData_Begin) +1;
-     //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
+     qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
     //crop data begins
      m_DISTdata.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
      for(int i=0;i<m_numberDataOneSocket;i++)
@@ -130,7 +131,7 @@ void SICK511::extractDISTData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
-	 //qDebug() << "dist of " + m_name + ":" << m_DISTdata;
+     qDebug() << "dist of " + m_name + ":" << m_DISTdata;
      //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
 }
 
@@ -353,13 +354,34 @@ int SICK511::lateralOffset()
 		m_lateralOffset = lateral;
 		return m_lateralOffset;
 	}
-	else return m_lateralOffset;
+    else return m_lateralOffset;
 }
 
-void SICK511::slot_on_error(QAbstractSocket::SocketError)
+int SICK511::frontDistance()
 {
-     emit sig_statusTable("SICK511 TCP Socket error:");
-     qDebug()<<"TCP Socket error:"<<m_tcpSocket.errorString();
+//    for(int i=0;i<(FRONT_ANGLE_END-FRONT_ANGLE_START)/m_angleResolution;i++)
+//    {
+
+//    }
+}
+
+void SICK511::slot_on_error(QAbstractSocket::SocketError socktError)
+{
+     qDebug()<<"SICK 511 error";
+     switch(socktError)
+     {
+     case QAbstractSocket::RemoteHostClosedError:
+         emit sig_statusTable("SICK511 RemoteHostClosedError:"+m_tcpSocket.errorString());
+         break;
+     case QAbstractSocket::DatagramTooLargeError:
+         emit sig_statusTable("SICK511 DatagramTooLargeError:"+m_tcpSocket.errorString());
+         break;
+     case QAbstractSocket::NetworkError:
+         emit sig_statusTable("SICK511 NetworkError:"+m_tcpSocket.errorString());
+         break;
+     default:
+         break;
+     }
 	 m_isOn = false;
 }
 

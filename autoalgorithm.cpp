@@ -12,6 +12,7 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_mile_saved(0),
   m_mile_current(0)
 {
+    p_track = new TrackMemory;
 }
 
 void autoAlgorithm::update()
@@ -19,19 +20,19 @@ void autoAlgorithm::update()
 	switch (m_stage)
 	{
 	case autoAlgorithm::Teach:
+        if(p_track->isDataLoaded("beaconRaw.txt"))
 		p_track->loadData("beaconRaw.txt");
-        if (isCertainMileIncrement(m_mile_current, MILEDELTA))
+        if (isCertainMileIncrement(m_mile_current))
 		{
-			p_track->saveData("path.txt", m_mile_acc_deacc_left_right);
-			m_mile_current = m_mile_acc_deacc_left_right.at(0);
+            p_track->savePath(m_mile_current, m_mile_acc_deacc_left_right.at(0)
+                              ,m_mile_acc_deacc_left_right.at(1)
+                              ,m_mile_acc_deacc_left_right.at(2)
+                              ,m_mile_acc_deacc_left_right.at(3));
+            m_mile_saved = m_mile_acc_deacc_left_right.at(0);
 		}
         if (p_track->matchBeacon(m_beaconLength))
 		{
-			QVector<int> vec;
-			vec.push_back(p_track->currentBeacon());
-			vec.push_back(p_track->currentBeacon());
-			vec.push_back(m_mile_acc_deacc_left_right.at(0));
-			p_track->saveData("beacon.txt", vec);
+            p_track->saveBeacon(p_track->currentBeacon(),m_mile_acc_deacc_left_right.at(0));
 		}
 		break;
 	case autoAlgorithm::Auto:
@@ -42,7 +43,13 @@ void autoAlgorithm::update()
 		break;
 	default:
 		break;
-	}
+    }
+}
+
+void autoAlgorithm::finish()
+{
+    if(m_stage==Teach)
+        p_track->saveAll();
 }
 void autoAlgorithm::setStageType(const int type)
 {
@@ -91,7 +98,29 @@ int autoAlgorithm::accelerator() const
 
 int autoAlgorithm::deaccelerator() const
 {
-     return -1;
+    return -1;
+}
+
+void autoAlgorithm::testTrackMemory()
+{
+    qDebug()<<"autoAlgorithm::testTrackMemory";
+    //p_track->loadData("beaconRaw.txt");
+    p_track->saveBeacon(200,1000);
+    p_track->savePath(1000,43,0,10,0);
+}
+
+void autoAlgorithm::testTrackMemory2()
+{
+    qDebug()<<"autoAlgorithm::testTrackMemory2";
+    p_track->saveAll();
+}
+
+void autoAlgorithm::loadData()
+{
+    qDebug()<<"autoAlgorithm::loadData";
+    p_track->loadData("beaconRaw.dat");
+    p_track->loadData("path.dat");
+    p_track->loadData("beacon.dat");
 }
 
 void autoAlgorithm::slot_on_updateControlMode(bool isAuto)
@@ -107,11 +136,18 @@ void autoAlgorithm::slot_on_updateBeaconLength(QVector<int> vec)
 void autoAlgorithm::slot_on_updateCourseAngle(int angle)
 {
     m_courseAngle = angle;
+    qDebug()<<"course angle is :"<<angle;
 }
 
 void autoAlgorithm::slot_on_updateLateralOffset(int of)
 {
-    m_courseAngle = of;
+    m_lateralOffset = of;
+    qDebug()<<"m_lateralOffset is :"<<of;
+}
+
+void autoAlgorithm::slot_on_updateMile(int mile)
+{
+    m_mile_current = mile;
 }
 
 void autoAlgorithm::slot_on_updateControlInfo(QVector<int> vec)
@@ -120,7 +156,7 @@ void autoAlgorithm::slot_on_updateControlInfo(QVector<int> vec)
 	m_mile_current = vec.at(0);
 }
 
-bool autoAlgorithm::isCertainMileIncrement(const int mile, const int inc)
+bool autoAlgorithm::isCertainMileIncrement(const int mile)
 {
 	//10% of m_mileDelta
 	if ((mile - m_mile_saved) <= 0) return false;

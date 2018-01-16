@@ -2,8 +2,8 @@
 #define CYJDATA
 struct CYJData
 {
-     unsigned char startdata1;
-     unsigned char startdata2;
+    unsigned char startdata1;
+    unsigned char startdata2;
     unsigned char forward:1;
     unsigned char backward:1;
     unsigned char neutral:1;
@@ -13,8 +13,8 @@ struct CYJData
     unsigned char horn:1;
     unsigned char zero:1;
 
-    unsigned char automanual:1;
-    unsigned char remoteLocal:1;
+    unsigned char manualVisual:1;//io4
+    unsigned char localRemote:1;
     unsigned char start:1;
     unsigned char flameout:1;
     unsigned char middle:1;

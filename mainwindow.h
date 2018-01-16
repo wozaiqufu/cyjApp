@@ -29,8 +29,8 @@ public:
 private:
      void initStatusTable();
      void checkControlMode();
+     void initCYJActualData();
 signals:
-    void sig_CAN(ulong id, uchar length, uchar *data);
     void sig_stopPermanentReq();
     void sig_informDirection(int);
     void sig_informInfo2surface(CYJData);
@@ -45,17 +45,18 @@ private slots:
     void slot_on_initSICK400();
     void slot_on_stopSICK400();
     void slot_on_readFrame();
-    void slot_on_sendFrame();
-    void slot_on_sendFrame2();
-    void slot_on_sendFrame3();
     void slot_on_initSurface();
+    void slot_on_testAlgorithm();
+    void slot_on_testAlgorithm2();
+    void slot_on_testAlgorithmLoadData();
+    void slot_on_startTeach();
     void slot_on_mainTimer_timeout();
+    void slot_on_teachTimer_timeout();
+    void slot_on_CANTest_timeout();
     void slot_on_setAlgorithm();
 	void slot_on_setMode();
-    void slot_on_savedata();
-    void slot_on_openFile();
-    void slot_on_loadData();
-    void slot_on_closeFile();
+    //test
+    void slot_on_writeCAN();
 public slots:
     void slot_on_updateStatusTable(QString qstr);
     void slot_on_updateCAN304(QVector<int> vec);
@@ -71,11 +72,12 @@ private:
     CAN m_can;
     SurfaceCommunication	m_surfaceComm;
     autoAlgorithm			m_algorithm;
-    QTimer					m_timer_SICK;
+    QTimer					m_timer_Teach;
     QTimer					m_timer_CAN;
     QThread					m_thread_CAN;
     QTimer					m_timer_main;
     QTimer					m_timer_surface;
+    QTimer                  m_timer_CANTest;
     /*************************************************************************
      * vehicle states to surface
 	 *
@@ -83,24 +85,6 @@ private:
     Direction m_direction;
 	ControlMode m_controlMode;
     int m_mileMeter;//in cm
-	/*************************************************************************
-	* for control algorithm use
-	*
-	/*************************************************************************/
-    int m_courseAngle;
-    int m_lateralOffset;
-    int m_mileMeterPulse;
-    int m_calibratedMile;
-    /*
-     *test only
-*****************************/
-    int _light;
-    bool _CANReady;
-	TrackMemory m_track;
-    /**receive surface control
-*****************************/
-    QVector<int> m_surface_control_vec;
-
 };
 
 #endif // MAINWINDOW_H

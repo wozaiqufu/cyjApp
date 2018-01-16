@@ -24,7 +24,7 @@ bool CAN::init(const int portIndex)
     //bind socket to specific CAN port
     strcpy(m_ifr.ifr_name,"can0");
     //strcpy(m_ifr.ifr_name,"can1");
-    qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
+    //qDebug()<<"m_ifr.ifr_name:"<<m_ifr.ifr_name;
     ret = ioctl(m_s,SIOCGIFINDEX,&m_ifr);
     if(ret<0)
     {
@@ -62,7 +62,13 @@ void CAN::slot_on_sendFrame(ulong id, uchar length, uchar *data)
     //printFrame(&m_frameSend);
     int nbytes=write(m_s,&m_frameSend,sizeof(m_frameSend));
     if (nbytes < 0) {
+        qDebug()<<"======================";
+        handle_err_frame(&m_frameSend);
         emit sig_statusTable("Send message error senddata\n");
+    }
+    else
+    {
+        emit sig_statusTable("CAN Send message succeed");
     }
 }
 

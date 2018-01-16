@@ -2,35 +2,33 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QTime>
+#include <fstream>
+#include <QFile>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
 m_controlMode(Local),
 m_mileMeter(0),
-/*************************/
-m_direction(Forward),
-m_courseAngle(0),
-m_lateralOffset(0),
-m_mileMeterPulse(0),
-m_calibratedMile(0),
-//test only
-_light(0),
-_CANReady(false)
+m_direction(Forward)
 {
     ui->setupUi(this);
 	initStatusTable();
+    initCYJActualData();
 	connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(slot_on_initSICK511()));
 	connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(slot_on_stopSICK511()));
     connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
     connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
-    connect(ui->pushButton_light1,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame()));
-    connect(ui->pushButton_light2,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame2()));
-    connect(ui->pushButton_bothLight,SIGNAL(clicked()),this,SLOT(slot_on_sendFrame3()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(ui->pushButton_connect400,SIGNAL(clicked()),this,SLOT(slot_on_initSICK400()));
     connect(ui->pushButton_stop400,SIGNAL(clicked()),this,SLOT(slot_on_stopSICK400()));
+    connect(ui->pushButton_testAlgorithm,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm()));
+    connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm2()));
+    connect(ui->pushButton_loaddata,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithmLoadData()));
+    connect(ui->pushButton_startTeach,SIGNAL(clicked()),this,SLOT(slot_on_startTeach()));
+    connect(ui->pushButton_writeCAN,SIGNAL(clicked()),this,SLOT(slot_on_writeCAN()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
+    connect(&m_timer_CANTest,SIGNAL(timeout()),this,SLOT(slot_on_CANTest_timeout()));
 	QButtonGroup* check_group[2];
 	check_group[0] = new QButtonGroup(this);
 	check_group[1] = new QButtonGroup(this);
@@ -47,11 +45,7 @@ _CANReady(false)
 	connect(ui->checkBox_mixed, SIGNAL(clicked()), this, SLOT(slot_on_setAlgorithm()));
 	connect(ui->checkBox_teach, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
 	connect(ui->checkBox_auto, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
-    connect(ui->pushButton_openFile,SIGNAL(clicked()),this,SLOT(slot_on_openFile()));
-    connect(ui->pushButton_savedata,SIGNAL(clicked()),this,SLOT(slot_on_savedata()));
-    connect(ui->pushButton_readData,SIGNAL(clicked()),this,SLOT(slot_on_loadData()));
-    connect(ui->pushButton_closeFile,SIGNAL(clicked()),this,SLOT(slot_on_closeFile()));
-    m_timer_main.start(30);
+    m_timer_main.start(1);
     //signals:mainwindow,slots:autoAlgorithm
     connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
     //signals:SICK400,slots:algorithm
@@ -62,7 +56,7 @@ _CANReady(false)
     connect(&m_sick511_b, SIGNAL(sigUpdateCourseAngle(int)), &m_algorithm, SLOT(slot_on_updateCourseAngle(int)));
     connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), &m_algorithm, SLOT(slot_on_updateLateralOffset(int)));
     //signals:MainWindow,slots:Algorithm
-	connect(this, SIGNAL(sig_informAlgrithmMile(int)), &m_algorithm, SLOT(slot_on_updateMile(int))); 
+    connect(this, SIGNAL(sig_informAlgrithmMile(int)), &m_algorithm, SLOT(slot_on_updateMile(int)));
 }
 
 MainWindow::~MainWindow()
@@ -87,25 +81,67 @@ void MainWindow::initStatusTable()
 
 void MainWindow::checkControlMode()
 {
-    if(m_cyjData_actual.remoteLocal==0&&m_cyjData_actual.automanual==0)
+    if(m_cyjData_actual.localRemote==0&&m_cyjData_actual.manualVisual==0)
     {
         m_controlMode = Local;
+        //qDebug()<<"m_controlMode:Local";
     }
-    else if(m_cyjData_actual.remoteLocal==1&&m_cyjData_actual.automanual==0)
+    else if(m_cyjData_actual.localRemote==0&&m_cyjData_actual.manualVisual==1)
     {
         m_controlMode = Visible;
+        //qDebug()<<"m_controlMode:Visible";
     }
-    else if(m_cyjData_actual.remoteLocal==1&&m_cyjData_actual.automanual==1)
+    else if(m_cyjData_actual.localRemote==1&&m_cyjData_actual.manualVisual==1)
     {
-        if(m_cyjData_surface.remoteLocal==1&&m_cyjData_surface.automanual==0)
+        if(m_cyjData_surface.localRemote==1&&m_cyjData_surface.manualVisual==0)
         {
             m_controlMode = Remote;
+            //qDebug()<<"m_controlMode:Remote";
         }
-        else if(m_cyjData_surface.remoteLocal==1&&m_cyjData_surface.automanual==1)
+        else if(m_cyjData_surface.localRemote==1&&m_cyjData_surface.manualVisual==1)
         {
             m_controlMode = Auto;
+            //qDebug()<<"m_controlMode:Auto";
         }
     }
+}
+
+void MainWindow::initCYJActualData()
+{
+    m_cyjData_actual.startdata1 = 0xAA;
+    m_cyjData_actual.startdata2 = 0x55;
+    m_cyjData_actual.forward = 0;
+    m_cyjData_actual.backward = 0;
+    m_cyjData_actual.neutral = 1;
+    m_cyjData_actual.stop = 1;
+    m_cyjData_actual.scram = 0;
+    m_cyjData_actual.light = 0;
+    m_cyjData_actual.horn = 0;
+    m_cyjData_actual.zero = 0;
+
+    m_cyjData_actual.manualVisual = 0;
+    m_cyjData_actual.localRemote = 0;
+    m_cyjData_actual.start = 0;
+    m_cyjData_actual.flameout = 0;
+    m_cyjData_actual.middle = 1;
+    m_cyjData_actual.warn1 = 0;
+    m_cyjData_actual.warn2 = 0;
+    m_cyjData_actual.warn3 = 0;
+
+    m_cyjData_actual.rise = 0;
+    m_cyjData_actual.fall = 0;
+    m_cyjData_actual.turn = 0;
+    m_cyjData_actual.back = 0;
+    m_cyjData_actual.left = 0;
+    m_cyjData_actual.right = 0;
+    m_cyjData_actual.acc = 0;
+    m_cyjData_actual.deacc = 0;
+    m_cyjData_actual.speed = 0;
+    m_cyjData_actual.engine = 0;
+    m_cyjData_actual.spliceAngle = 0;
+    m_cyjData_actual.oil = 0;
+    m_cyjData_actual.temperature = 0;
+    m_cyjData_actual.enddata = 0xFF;
 }
 
 void MainWindow::slot_on_initSICK511()
@@ -118,7 +154,7 @@ void MainWindow::slot_on_initSICK511()
 	{
 		m_sick511_f.continuousStart();
 	}
-
+    m_sick511_f.useData(true);
 	if (m_sick511_b.init("backward", "192.168.1.51", 2111))
 	{
 		m_sick511_b.continuousStart();
@@ -133,7 +169,7 @@ void MainWindow::slot_on_stopSICK511()
 void MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
-    m_timer_CAN.setInterval(10);
+    m_timer_CAN.setInterval(1);
     m_timer_CAN.moveToThread(&m_thread_CAN);
     connect(&m_thread_CAN,SIGNAL(started()),&m_timer_CAN,SLOT(start()));
     connect(&m_can,SIGNAL(sigUpdateCAN304(QVector<int>)),this,SLOT(slot_on_updateCAN304(QVector<int>)));
@@ -164,6 +200,7 @@ void MainWindow::slot_on_stopSICK400()
 void MainWindow::slot_on_readFrame()
 {
     m_thread_CAN.start();
+    emit sig_statusTable("read CAN Start!");
     //_can8900.read_message();
 }
 
@@ -175,64 +212,113 @@ void MainWindow::slot_on_initSurface()
     connect(this,SIGNAL(sig_informInfo2surface(CYJData)),&m_surfaceComm,SLOT(slot_on_mainwindowUpdate(CYJData)));
     connect(&m_surfaceComm,SIGNAL(sig_informMainwindow(CYJData)),this,SLOT(slot_on_surfaceUpdate(CYJData)));
 
-    m_timer_surface.start(50);
+    m_timer_surface.start(10);
     //emit sig_statusTable("init surface!");
 }
 
-
-//only for test
-void MainWindow::slot_on_sendFrame()
+//write
+void MainWindow::slot_on_testAlgorithm()
 {
-//    uchar data[8] = {0,0,0,0,0,0,0,0};
-//    data[0] = 0x60;
-//    data[1] = 0x00;
-//    data[2] = 0x00;
-//    data[3] = 0x00;
-//    data[4] = 0x00;
-//    data[5] = 0x00;
-//    data[6] = 0x00;
-//    data[7] = 8;
-//    m_can.slot_on_sendFrame(0x0161,8,data);
+      m_algorithm.testTrackMemory();
 
-    uchar data[8] = {0,0,0,0,0,0,0,0};
-    data[0] = 32;
-    data[1] = 0;
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
-    data[5] = 0;
-    data[6] = 0;
-    data[7] = 0;
-    //m_can.slot_on_sendFrame(0x0161,8,data);
+//    QFile dataFile("beaconRaw.dat");
+//    dataFile.open(QIODevice::WriteOnly);
+//    QDataStream dataStream(&dataFile);
+//    dataStream <<1<<2;
+
+//    QFile dataFile("beacon.dat");
+//    dataFile.open(QIODevice::WriteOnly);
+//    QDataStream dataStream(&dataFile);
+//    for(int i=0;i<1000;i++)
+//    {
+//        dataStream <<20+2*i<<100+10*i;
+//    }
 }
 
-void MainWindow::slot_on_sendFrame2()
+//read
+void MainWindow::slot_on_testAlgorithm2()
 {
-    uchar data[8] = {0,0,0,0,0,0,0,0};
-    data[0] = 64;
-    data[1] = 0;
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
-    data[5] = 0;
-    data[6] = 0;
-    data[7] = 0;
-    //m_can.slot_on_sendFrame(0x0161,8,data);
+    m_algorithm.testTrackMemory2();
+//    QList<int> m_beacon;
+//    QFile readFile("beaconRaw.dat");
+//    if (readFile.open(QIODevice::ReadOnly))
+//    {
+//        qDebug()<<"file is opened!";
+//        QDataStream readStream(&readFile);
+//        while (!readStream.atEnd())
+//        {
+//            int value;
+//            readStream >> value;
+//            qDebug()<<"value:"<<value;
+//            m_beacon.append(value);
+//        }
+//        qDebug()<<"m_beacon:"<<m_beacon;
+//    }
+
+
+//        QList<int> length;
+//        QList<int> mile;
+//        QFile readFile("beacon.dat");
+//        if (readFile.open(QIODevice::ReadOnly))
+//        {
+//            qDebug()<<"file is opened!";
+//            QDataStream readStream(&readFile);
+//            int index = 0;
+//            while (!readStream.atEnd())
+//            {
+//                int value;
+//                readStream >> value;
+//                index++;
+//                qDebug()<<"value:"<<value;
+//                if(index%2==0)
+//                    length.append(value);
+//                else
+//                    mile.append(value);
+//            }
+//            qDebug()<<"length:"<<length;
+//            qDebug()<<"mile:"<<mile;
+    //        }
 }
 
-void MainWindow::slot_on_sendFrame3()
+void MainWindow::slot_on_testAlgorithmLoadData()
 {
-    uchar data[8] = {0,0,0,0,0,0,0,0};
-    data[0] = 96;
-    data[1] = 0;
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
-    data[5] = 0;
-    data[6] = 0;
-    data[7] = 0;
-    //m_can.slot_on_sendFrame(0x0161,8,data);
+    m_algorithm.loadData();
 }
+
+void MainWindow::slot_on_startTeach()
+{
+        QFile dataFile("beaconRaw.dat");
+        if(!dataFile.exists())
+        {
+            dataFile.open(QIODevice::WriteOnly);
+            QDataStream dataStream(&dataFile);
+            dataStream <<200<<300<<400<<500<<600<<700;
+        }
+       connect(&m_timer_Teach,SIGNAL(timeout()),this,SLOT(slot_on_teachTimer_timeout()));
+       m_timer_Teach.start(30);
+}
+
+ void MainWindow::slot_on_teachTimer_timeout()
+ {
+     m_algorithm.setStageType(0);
+     m_algorithm.update();
+ }
+
+ void MainWindow::slot_on_CANTest_timeout()
+ {
+     qDebug()<<"slot_on_writeCAN";
+     uchar data[8] = {0,0,0,0,0,0,0,0};
+     data[0] = 1;
+     data[1] = 16;
+     data[2] = 2;
+     data[3] = 0;
+     data[4] = 0;
+     data[5] = 0;
+     data[6] = 4;
+     data[7] = 0;
+     m_can.slot_on_sendFrame(0x304,8,data);
+ }
+
 /****************************************************************************/
 /****************************************************************************/
 /*********************update data and send to CR0032*************************/
@@ -247,8 +333,8 @@ void MainWindow::slot_on_mainTimer_timeout()
     //to surface,other are updated from CAN
     m_cyjData_actual.startdata1 = 0xAA;
     m_cyjData_actual.startdata2 = 0x55;
-    m_cyjData_actual.forward = (m_direction==Forward);
-    m_cyjData_actual.backward = (m_direction==Backward);
+//    m_cyjData_actual.forward = (m_direction==Forward);
+//    m_cyjData_actual.backward = (m_direction==Backward);
     m_cyjData_actual.enddata = 0xFF;
     emit sig_informInfo2surface(m_cyjData_actual);
     checkControlMode();
@@ -282,15 +368,28 @@ void MainWindow::slot_on_mainTimer_timeout()
                 32*m_cyjData_surface.light +
                 64*m_cyjData_surface.horn +
                 128*m_cyjData_surface.zero;
-//        qDebug()<<"===========================================>";
-//        qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
-//        qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
-//        qDebug()<<"data from surface neutral:"<<m_cyjData_surface.neutral;
-//        qDebug()<<"data from surface stop:"<<m_cyjData_surface.stop;
-//        qDebug()<<"data from surface scram:"<<m_cyjData_surface.scram;
-//        qDebug()<<"data from surface light:"<<m_cyjData_surface.light;
-//        qDebug()<<"data from surface horn:"<<m_cyjData_surface.horn;
-//        qDebug()<<"data[0]:"<<data[0];
+//            qDebug()<<"===========================================>";
+//            qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
+//            qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
+//            qDebug()<<"data from surface neutral:"<<m_cyjData_surface.neutral;
+//            qDebug()<<"data from surface stop:"<<m_cyjData_surface.stop;
+//            qDebug()<<"data from surface scram:"<<m_cyjData_surface.scram;
+//            qDebug()<<"data from surface light:"<<m_cyjData_surface.light;
+//            qDebug()<<"data from surface horn:"<<m_cyjData_surface.horn;
+//            qDebug()<<"data from surface zero:"<<m_cyjData_surface.zero;
+//            qDebug()<<"data from surface start:"<<m_cyjData_surface.start;
+//            qDebug()<<"data from surface flameout:"<<m_cyjData_surface.flameout;
+//            qDebug()<<"data from surface middle:"<<m_cyjData_surface.middle;
+//            qDebug()<<"data from surface localRemote:"<<m_cyjData_surface.localRemote;
+//            qDebug()<<"data from surface manualVisual:"<<m_cyjData_surface.manualVisual;
+//            qDebug()<<"data from surface rise:"<<m_cyjData_surface.rise;
+//            qDebug()<<"data from surface fall:"<<m_cyjData_surface.fall;
+//            qDebug()<<"data from surface turn:"<<m_cyjData_surface.turn;
+//            qDebug()<<"data from surface back:"<<m_cyjData_surface.back;
+//            qDebug()<<"data from surface left:"<<m_cyjData_surface.left;
+//            qDebug()<<"data from surface right:"<<m_cyjData_surface.right;
+//            qDebug()<<"data from surface acc:"<<m_cyjData_surface.acc;
+//            qDebug()<<"data from surface deacc:"<<m_cyjData_surface.deacc;
         data[1] = 4*m_cyjData_surface.start +
                 8*m_cyjData_surface.flameout +
                 16*m_cyjData_surface.middle +
@@ -304,7 +403,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = m_cyjData_surface.back;
         data[6] = m_cyjData_surface.left;
         data[7] = m_cyjData_surface.right;
-        m_can.slot_on_sendFrame(0x191,8,data);
+        m_can.slot_on_sendFrame(0x161,8,data);
         data[0] = m_cyjData_surface.acc;
         data[1] = m_cyjData_surface.deacc;
         data[2] = 0;
@@ -313,7 +412,7 @@ void MainWindow::slot_on_mainTimer_timeout()
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-        m_can.slot_on_sendFrame(0x291,8,data);
+        m_can.slot_on_sendFrame(0x261,8,data);
         break;
         }
     case Auto:
@@ -365,9 +464,9 @@ void MainWindow::slot_on_mainTimer_timeout()
     //UI Update:update vehicle params
     ui->label_spliceAngle->setText(QString::number(m_cyjData_actual.spliceAngle));
     ui->label_velocity->setText(QString::number(m_cyjData_actual.speed));
-    ui->label_courseAngle->setText(QString::number(m_courseAngle));
+    //ui->label_courseAngle->setText(QString::number(m_courseAngle));
     ui->label_engineSpeed->setText(QString::number(m_cyjData_actual.engine));
-    ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
+    //ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_cyjData_actual.neutral));
     switch (m_controlMode)
     {
@@ -395,14 +494,18 @@ void MainWindow::slot_on_mainTimer_timeout()
     {
         ui->label_direction->setText("Backward");
     }
+    ui->label_surfaceLight->setText(QString::number(m_cyjData_surface.light));
+    ui->label_surfaceHorn->setText(QString::number(m_cyjData_surface.horn));
     //console output
- //   qDebug()<<"=========================actual data are:";
+//    qDebug()<<"=========================actual data are:";
 //    qDebug()<<"neutral:"<<m_cyjData_actual.neutral;
 //    qDebug()<<"stop:"<<m_cyjData_actual.stop;
 //    qDebug()<<"scram:"<<m_cyjData_actual.scram;
 //    qDebug()<<"light:"<<m_cyjData_actual.light;
 //    qDebug()<<"horn:"<<m_cyjData_actual.horn;
-//    qDebug()<<"start:"<<m_cyjData_actual.start;
+//    qDebug()<<"horn:"<<m_cyjData_actual.horn;
+//    qDebug()<<"autoManual:"<<m_cyjData_actual.manualVisual;
+//    qDebug()<<"RemoteLocal:"<<m_cyjData_actual.localRemote;
 //    qDebug()<<"flameout:"<<m_cyjData_actual.flameout;
 //    qDebug()<<"middle:"<<m_cyjData_actual.middle;
 //    qDebug()<<"rise:"<<m_cyjData_actual.rise;
@@ -416,7 +519,6 @@ void MainWindow::slot_on_mainTimer_timeout()
 //    qDebug()<<"speed:"<<m_cyjData_actual.speed;
 //    qDebug()<<"engine:"<<m_cyjData_actual.engine;
 //    qDebug()<<"splice:"<<m_cyjData_actual.spliceAngle;
-  //  qDebug()<<"=============================================";
 }
 
 void MainWindow::slot_on_setAlgorithm()
@@ -442,53 +544,38 @@ void MainWindow::slot_on_setMode()
 	else
 	{
 		m_algorithm.setStageType(1);
-	}
+    }
 }
 
-void MainWindow::slot_on_savedata()
+void MainWindow::slot_on_writeCAN()
 {
-    QVector<int> vector;
-	vector.push_back(2);
-    vector.push_back(3);
-    vector.push_back(12);
-    vector.push_back(11);
-    vector.push_back(16);
-	m_track.saveData("path.txt", vector);
-	vector.clear();
-	vector.push_back(20);
-	vector.push_back(20);
-	vector.push_back(200);
-	m_track.saveData("beacon.txt", vector);
-}
-
-void MainWindow::slot_on_openFile()
-{
-    emit sig_statusTable("slot_on_openFile");
-    //m_algorithm.initWriting("path.txt");
-    //m_algorithm.initWriting("beacon.txt");
-}
-
-void MainWindow::slot_on_loadData()
-{
-	//m_track.loadData("path.txt");
-	m_track.loadData("beaconRaw.txt");
-	//m_track.loadData("beacon.txt");
-}
-
-void MainWindow::slot_on_closeFile()
-{
-    //m_algorithm.closeFile("path.txt");
-    //m_algorithm.closeFile("beacon.txt");
+    m_timer_CANTest.start(2000);
 }
 
 void MainWindow::slot_on_updateCAN304(QVector<int> vec)
 {
-    //qDebug()<<"CAN304:"<<vec;
+    qDebug()<<"CAN304:"<<vec;
     if(vec.size()<8)
     {
         return;
     }
     //extract Data[0]
+    if((vec.at(0))%2==1)
+    {
+        m_cyjData_actual.forward = 1;
+    }
+    else
+    {
+        m_cyjData_actual.forward = 0;
+    }
+    if((vec.at(0)/2)%2==1)
+    {
+        m_cyjData_actual.backward = 1;
+    }
+    else
+    {
+        m_cyjData_actual.backward = 0;
+    }
     if((vec.at(0)/4)%2==1)
     {
         m_cyjData_actual.neutral = 1;
@@ -497,7 +584,7 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
     {
         m_cyjData_actual.neutral = 0;
     }
-    if((vec.at(0)/4)%2==1)
+    if((vec.at(0)/8)%2==1)
     {
         m_cyjData_actual.stop = 1;
     }
@@ -506,7 +593,7 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
         m_cyjData_actual.stop = 0;
     }
 
-    if((vec.at(0)/8)%2==1)
+    if((vec.at(0)/16)%2==1)
     {
         m_cyjData_actual.scram = 1;
     }
@@ -515,7 +602,7 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
         m_cyjData_actual.scram = 0;
     }
 
-    if((vec.at(0)/16)%2==1)
+    if((vec.at(0)/32)%2==1)
     {
         m_cyjData_actual.light = 1;
     }
@@ -524,7 +611,7 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
         m_cyjData_actual.light = 0;
     }
 
-    if((vec.at(0)/32)%2==1)
+    if((vec.at(0)/64)%2==1)
     {
         m_cyjData_actual.horn = 1;
     }
@@ -538,40 +625,36 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
     switch(vec.at(1)%4)
     {
     case 0:
-        m_controlMode = Local;
-        m_cyjData_actual.remoteLocal = 0;
-        m_cyjData_actual.automanual = 0;
+        m_cyjData_actual.localRemote = 0;
+        m_cyjData_actual.manualVisual = 0;
         break;
     case 1:
-        m_controlMode = Visible;
-        m_cyjData_actual.remoteLocal = 0;
-        m_cyjData_actual.automanual = 0;
+        m_cyjData_actual.localRemote = 1;
+        m_cyjData_actual.manualVisual = 1;
         break;
     case 2:
-        m_controlMode = Remote;
-        m_cyjData_actual.remoteLocal = 1;
-        m_cyjData_actual.automanual = 0;
+        m_cyjData_actual.localRemote = 1;
+        m_cyjData_actual.manualVisual = 1;
         break;
     case 3:
-        m_controlMode = Auto;
-        m_cyjData_actual.remoteLocal = 1;
-        m_cyjData_actual.automanual = 1;
+        m_cyjData_actual.localRemote = 0;
+        m_cyjData_actual.manualVisual = 1;
         break;
     default:
         break;
     }
     //extract engine start
-    m_cyjData_actual.start = (vec.at(1)/2)%2;
+    m_cyjData_actual.start = (vec.at(1)/4)%2;
     //extract engine stop
-    m_cyjData_actual.flameout = (vec.at(1)/4)%2;
+    m_cyjData_actual.flameout = (vec.at(1)/8)%2;
     //extract engine switch medium
-    m_cyjData_actual.middle = (vec.at(1)/8)%2;
+    m_cyjData_actual.middle = (vec.at(1)/16)%2;
     //extract warn1
-    m_cyjData_actual.warn1 = (vec.at(1)/16)%2;
+    m_cyjData_actual.warn1 = (vec.at(1)/32)%2;
     //extract warn2
-    m_cyjData_actual.warn2 = (vec.at(1)/32)%2;
+    m_cyjData_actual.warn2 = (vec.at(1)/64)%2;
     //extract warn3
-    m_cyjData_actual.warn3 = (vec.at(1)/64)%2;
+    m_cyjData_actual.warn3 = (vec.at(1)/128)%2;
 
     m_cyjData_actual.rise = vec.at(2);
     m_cyjData_actual.fall = vec.at(3);
@@ -583,7 +666,7 @@ void MainWindow::slot_on_updateCAN304(QVector<int> vec)
 
 void MainWindow::slot_on_updateCAN305(QVector<int> vec)
 {
-    //qDebug()<<"CAN305:"<<vec;
+    qDebug()<<"CAN305:"<<vec;
     if(vec.size()<8)
     {
         return;
@@ -594,11 +677,14 @@ void MainWindow::slot_on_updateCAN305(QVector<int> vec)
     m_cyjData_actual.engine = vec.at(3);
     m_cyjData_actual.spliceAngle = vec.at(4);
     m_cyjData_actual.oil = vec.at(5);
-    m_mileMeter = vec.at(6)*256 + vec.at(7);
+    m_cyjData_actual.temperature = vec.at(6);
+    //20180116 can305[6] is water temperature
+    //m_mileMeter = vec.at(6)*256 + vec.at(7);
 }
 
 void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
 {
+    //qDebug()<<"MainWindow::slot_on_surfaceUpdate(CYJData cyj)";
     m_cyjData_surface.forward = cyj.forward;
     m_cyjData_surface.backward = cyj.backward;
     m_cyjData_surface.neutral = cyj.neutral;
@@ -607,8 +693,8 @@ void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
     m_cyjData_surface.light = cyj.light;
     m_cyjData_surface.horn = cyj.horn;
     m_cyjData_surface.zero = cyj.zero;
-    m_cyjData_surface.automanual = cyj.automanual;
-    m_cyjData_surface.remoteLocal = cyj.remoteLocal;
+    m_cyjData_surface.manualVisual = cyj.manualVisual;
+    m_cyjData_surface.localRemote = cyj.localRemote;
     m_cyjData_surface.start = cyj.start;
     m_cyjData_surface.flameout = cyj.flameout;
     m_cyjData_surface.middle = cyj.middle;
@@ -621,16 +707,16 @@ void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
     m_cyjData_surface.acc = cyj.acc;
     m_cyjData_surface.deacc = cyj.deacc;
 
+    ui->label_sur_acc->setText(QString::number(m_cyjData_surface.acc));
 
-    if(m_cyjData_surface.automanual==0&&m_cyjData_surface.remoteLocal==0)
+    if(m_cyjData_surface.manualVisual==0&&m_cyjData_surface.localRemote==0)
     {
         m_controlMode = Local;
     }
-    else if(m_cyjData_surface.automanual==0&&m_cyjData_surface.remoteLocal==0)
+    else if(m_cyjData_surface.manualVisual==0&&m_cyjData_surface.localRemote==0)
     {
 
     }
-
 //    qDebug()<<"===========================================>";
 //    qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
 //    qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
@@ -643,8 +729,8 @@ void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
 //    qDebug()<<"data from surface start:"<<m_cyjData_surface.start;
 //    qDebug()<<"data from surface flameout:"<<m_cyjData_surface.flameout;
 //    qDebug()<<"data from surface middle:"<<m_cyjData_surface.middle;
-//    qDebug()<<"data from surface remoteLocal:"<<m_cyjData_surface.remoteLocal;
-//    qDebug()<<"data from surface automanual:"<<m_cyjData_surface.automanual;
+//    qDebug()<<"data from surface localRemote:"<<m_cyjData_surface.localRemote;
+//    qDebug()<<"data from surface manualVisual:"<<m_cyjData_surface.manualVisual;
 //    qDebug()<<"data from surface rise:"<<m_cyjData_surface.rise;
 //    qDebug()<<"data from surface fall:"<<m_cyjData_surface.fall;
 //    qDebug()<<"data from surface turn:"<<m_cyjData_surface.turn;

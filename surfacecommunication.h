@@ -19,6 +19,7 @@ public slots:
     void slot_on_mainwindowUpdate(CYJData cyj);
 private slots:
     void slot_on_readMessage();
+    void slot_on_error(QAbstractSocket::SocketError socktError);
 private:
     QTcpSocket          m_tcpSocket;
     QString             m_hostIp;
@@ -26,7 +27,6 @@ private:
     bool                m_isOn;
     CYJData             m_cyjData_surface;
     CYJData             m_cyjData_actual;
-    QVector<int>        m_mainwindowData;//to be sent to surface
     static const int    CONNECTMAXDELAY = 2000;
     static const int    NUMBERONEFRAME = 18;//18 bytes of data
 };

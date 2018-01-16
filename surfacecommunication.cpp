@@ -5,6 +5,8 @@
 SurfaceCommunication::SurfaceCommunication(QObject *parent) : QObject(parent),
     m_isOn(false)
 {
+     connect(&m_tcpSocket, SIGNAL(readyRead()), this, SLOT(slot_on_readMessage()));
+     connect(&m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slot_on_error(QAbstractSocket::SocketError)));
     //qDebug()<<"surface construction current thread is:"<<QThread::currentThread();
 }
 
@@ -12,8 +14,6 @@ void SurfaceCommunication::init(const QString ip, const int port)
 {
     m_hostIp = ip;
     m_port = port;
-    connect(&m_tcpSocket, SIGNAL(readyRead()), this, SLOT(slot_on_readMessage()));
-    connect(&m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slot_on_error(QAbstractSocket::SocketError)));
     m_tcpSocket.abort();
     m_tcpSocket.connectToHost(m_hostIp, m_port);
     if (m_tcpSocket.waitForConnected(CONNECTMAXDELAY))
@@ -22,7 +22,7 @@ void SurfaceCommunication::init(const QString ip, const int port)
         m_isOn = true;
     }
 }
-
+//send data to surface
 void SurfaceCommunication::slot_doWork()
 {
     QByteArray block;
@@ -48,8 +48,8 @@ void SurfaceCommunication::slot_doWork()
         if(i==3)
         {
             int aa = 0;
-            aa += m_cyjData_actual.automanual;
-            aa += m_cyjData_actual.remoteLocal*2;
+            aa += m_cyjData_actual.manualVisual;
+            aa += m_cyjData_actual.localRemote*2;
             aa += m_cyjData_actual.start*4;
             aa += m_cyjData_actual.flameout*8;
             aa += m_cyjData_actual.middle*16;
@@ -73,52 +73,36 @@ void SurfaceCommunication::slot_doWork()
         if(i==16) out<<quint8(m_cyjData_actual.temperature);
         if(i==17) out<<quint8(0xFF);
     }
-    qDebug()<<"=========================actual data are:";
-    qDebug()<<"neutral:"<<m_cyjData_actual.neutral;
-    qDebug()<<"stop:"<<m_cyjData_actual.stop;
-    qDebug()<<"scram:"<<m_cyjData_actual.scram;
-    qDebug()<<"light:"<<m_cyjData_actual.light;
-    qDebug()<<"horn:"<<m_cyjData_actual.horn;
-    qDebug()<<"start:"<<m_cyjData_actual.start;
-    qDebug()<<"flameout:"<<m_cyjData_actual.flameout;
-    qDebug()<<"middle:"<<m_cyjData_actual.middle;
-    qDebug()<<"rise:"<<m_cyjData_actual.rise;
-    qDebug()<<"fall:"<<m_cyjData_actual.fall;
-    qDebug()<<"turn:"<<m_cyjData_actual.turn;
-    qDebug()<<"back:"<<m_cyjData_actual.back;
-    qDebug()<<"left:"<<m_cyjData_actual.left;
-    qDebug()<<"right:"<<m_cyjData_actual.right;
-    qDebug()<<"acc:"<<m_cyjData_actual.acc;
-    qDebug()<<"deacc:"<<m_cyjData_actual.deacc;
-    qDebug()<<"speed:"<<m_cyjData_actual.speed;
-    qDebug()<<"engine:"<<m_cyjData_actual.engine;
-    qDebug()<<"splice:"<<m_cyjData_actual.spliceAngle;
+//    qDebug()<<"=========================actual data are:";
+//    qDebug()<<"neutral:"<<m_cyjData_actual.neutral;
+//    qDebug()<<"stop:"<<m_cyjData_actual.stop;
+//    qDebug()<<"scram:"<<m_cyjData_actual.scram;
+//    qDebug()<<"light:"<<m_cyjData_actual.light;
+//    qDebug()<<"horn:"<<m_cyjData_actual.horn;
+//    qDebug()<<"horn:"<<m_cyjData_actual.horn;
+//    qDebug()<<"autoManual:"<<m_cyjData_actual.manualVisual;
+//    qDebug()<<"RemoteLocal:"<<m_cyjData_actual.localRemote;
+//    qDebug()<<"flameout:"<<m_cyjData_actual.flameout;
+//    qDebug()<<"middle:"<<m_cyjData_actual.middle;
+//    qDebug()<<"rise:"<<m_cyjData_actual.rise;
+//    qDebug()<<"fall:"<<m_cyjData_actual.fall;
+//    qDebug()<<"turn:"<<m_cyjData_actual.turn;
+//    qDebug()<<"back:"<<m_cyjData_actual.back;
+//    qDebug()<<"left:"<<m_cyjData_actual.left;
+//    qDebug()<<"right:"<<m_cyjData_actual.right;
+//    qDebug()<<"acc:"<<m_cyjData_actual.acc;
+//    qDebug()<<"deacc:"<<m_cyjData_actual.deacc;
+//    qDebug()<<"speed:"<<m_cyjData_actual.speed;
+//    qDebug()<<"engine:"<<m_cyjData_actual.engine;
+//    qDebug()<<"splice:"<<m_cyjData_actual.spliceAngle;
+    //AA 55 10 02 00 00 00 10 10 20 22 21 29 21 44 83 00 FF
+//    out<<quint8(0xAA)<<quint8(0x55)<<quint8(0x10)<<
+//         quint8(0x02)<<quint8(0x00)<<quint8(0x00)<<
+//         quint8(0x00)<<quint8(0x10)<<quint8(0x10)<<
+//         quint8(0x20)<<quint8(0x22)<<quint8(0x21)<<
+//         quint8(0x29)<<quint8(0x21)<<quint8(0x44)<<
+//         quint8(0x83)<<quint8(0x00)<<quint8(0xFF);
     m_tcpSocket.write(block);
-//    QDataStream in(&m_tcpSocket);
-//    in<<quint8(0xAA)<<quint8(0x55)<<quint8(0x61)<<quint8(0x06)
-//     <<quint8(0x01)<<quint8(0x01)<<quint8(0x01)<<quint8(0x01)<<quint8(0x10)<<quint8(0x00)
-//    <<quint8(0x10)<<quint8(0x00)<<quint8(0x64)<<quint8(0x32)<<quint8(0x16)<<quint8(0x64)
-//    <<quint8(0x10)<<quint8(0xFF);
-    //QByteArray ba("AA 55 ");
-//    char aa[9];
-//    aa[0] = 0xAA;
-//    aa[1] = 0x55;
-//    aa[2] = 0x61;
-//    aa[3] = 0x06;
-//    aa[4] = 0x01;
-//    aa[5] = 0x01;
-//    aa[6] = 0x01;
-//    aa[7] = 0x01;
-//    aa[8] = 0x10;
-//    aa[9] = 0x00;
-//    aa[10] = 0x10;
-//    aa[11] = 0x00;
-//    aa[12] = 0x64;
-//    aa[13] = 0x32;
-//    aa[14] = 0x16;
-//    aa[15] = 0x64;
-//    aa[16] = 0x10;
-//    aa[17] = 0xFF;
 }
 
 void SurfaceCommunication::slot_on_mainwindowUpdate(CYJData cyj)
@@ -134,8 +118,8 @@ void SurfaceCommunication::slot_on_mainwindowUpdate(CYJData cyj)
     m_cyjData_actual.horn = cyj.horn;
     m_cyjData_actual.zero = cyj.zero;
 
-    m_cyjData_actual.automanual = cyj.automanual;
-    m_cyjData_actual.remoteLocal = cyj.remoteLocal;
+    m_cyjData_actual.manualVisual = cyj.manualVisual;
+    m_cyjData_actual.localRemote = cyj.localRemote;
     m_cyjData_actual.start = cyj.start;
     m_cyjData_actual.flameout = cyj.flameout;
     m_cyjData_actual.middle = cyj.middle;
@@ -158,12 +142,13 @@ void SurfaceCommunication::slot_on_mainwindowUpdate(CYJData cyj)
     m_cyjData_actual.oil = 0;
     m_cyjData_actual.enddata = 0xFF;
 }
-
+//receive data from surface
 void SurfaceCommunication::slot_on_readMessage()
 {
+    //qDebug()<<"SurfaceCommunication::slot_on_readMessage()";
     m_tcpSocket.read((char *)&m_cyjData_surface,sizeof(m_cyjData_surface));
     if(m_cyjData_surface.startdata1==0xAA&&m_cyjData_surface.startdata2==0x55&&m_cyjData_surface.enddata==0xFF)
-        emit sig_informMainwindow(m_cyjData_surface);
+    emit sig_informMainwindow(m_cyjData_surface);
 //    qDebug()<<"===========================================>";
 //    qDebug()<<"data from surface forward:"<<m_cyjData_surface.forward;
 //    qDebug()<<"data from surface backward:"<<m_cyjData_surface.backward;
@@ -176,8 +161,8 @@ void SurfaceCommunication::slot_on_readMessage()
 //    qDebug()<<"data from surface start:"<<m_cyjData_surface.start;
 //    qDebug()<<"data from surface flameout:"<<m_cyjData_surface.flameout;
 //    qDebug()<<"data from surface middle:"<<m_cyjData_surface.middle;
-//    qDebug()<<"data from surface remoteLocal:"<<m_cyjData_surface.remoteLocal;
-//    qDebug()<<"data from surface automanual:"<<m_cyjData_surface.automanual;
+//    qDebug()<<"data from surface localRemote:"<<m_cyjData_surface.localRemote;
+//    qDebug()<<"data from surface manualVisual:"<<m_cyjData_surface.manualVisual;
 //    qDebug()<<"data from surface rise:"<<m_cyjData_surface.rise;
 //    qDebug()<<"data from surface fall:"<<m_cyjData_surface.fall;
 //    qDebug()<<"data from surface turn:"<<m_cyjData_surface.turn;
@@ -186,6 +171,25 @@ void SurfaceCommunication::slot_on_readMessage()
 //    qDebug()<<"data from surface right:"<<m_cyjData_surface.right;
 //    qDebug()<<"data from surface acc:"<<m_cyjData_surface.acc;
 //    qDebug()<<"data from surface deacc:"<<m_cyjData_surface.deacc;
+}
+
+void SurfaceCommunication::slot_on_error(QAbstractSocket::SocketError socktError)
+{
+    qDebug()<<"surface error";
+    switch(socktError)
+    {
+    case QAbstractSocket::RemoteHostClosedError:
+        emit sig_statusTable("surface RemoteHostClosedError:"+m_tcpSocket.errorString());
+        break;
+    case QAbstractSocket::DatagramTooLargeError:
+        emit sig_statusTable("surface DatagramTooLargeError:"+m_tcpSocket.errorString());
+        break;
+    case QAbstractSocket::NetworkError:
+        emit sig_statusTable("surface NetworkError:"+m_tcpSocket.errorString());
+        break;
+    default:
+        break;
+    }
 }
 
 

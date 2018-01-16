@@ -27,6 +27,7 @@ private:
         void	extractRSSIData();
         int		courseAngle();
         int		lateralOffset();
+        int     frontDistance();
 		bool    isDataLoaded();
 		int		angle2index(const int angle);
 signals:
@@ -35,7 +36,7 @@ signals:
     void	sig_statusTable(QString);
 private slots:
     void slot_on_readMessage();
-	void slot_on_error(QAbstractSocket::SocketError);
+    void slot_on_error(QAbstractSocket::SocketError socktError);
 private:
 	QString m_name;
 	QString m_ip;
@@ -63,5 +64,7 @@ private:
     static const int	STARTANGLE = 0;
     static const int	L1L2ANGLE = 30;
     static const int	ANGLESACLE = 30;
+    static const int	FRONT_ANGLE_START = 75;
+    static const int	FRONT_ANGLE_END = 105;
 };
 #endif

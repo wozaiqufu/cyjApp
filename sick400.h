@@ -29,7 +29,8 @@ private:
     QVector<int>  Pro_binary(QVector<int> vec) const;
 private slots:
     void        slot_on_readMessage();
-    void        slot_on_error(QAbstractSocket::SocketError);
+    void        slot_on_disconnected();
+    void        slot_on_error(QAbstractSocket::SocketError socktError);
 private:
     QString             m_name;
     QString             m_ip;

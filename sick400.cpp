@@ -4,8 +4,12 @@
 
 SICK400::SICK400(QObject *parent) : QObject(parent)
 {
+    //typedef void (QAbstractSocket::*QAbstractSocketErrorSignal)(QAbstractSocket::SocketError);
     connect(&m_tcpSocket, SIGNAL(readyRead()), this, SLOT(slot_on_readMessage()));
-    connect(&m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slot_on_error(QAbstractSocket::SocketError)));
+//   QObject::connect(&m_tcpSocket, &QTcpSocket::disconnected, this, &SICK400::slot_on_disconnected);
+    connect(&m_tcpSocket,SIGNAL(disconnected()),this,SLOT(slot_on_disconnected()));
+    //connect(&m_tcpSocket, static_cast<QAbstractSocketErrorSignal>(&QAbstractSocket::error), this, SLOT(slot_on_error(QAbstractSocket::SocketError)));
+    connect(&m_tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slot_on_error(QAbstractSocket::SocketError))/*,Qt::DirectConnection*/);
 }
 
 bool SICK400::init(const QString name, const QString ip, const int port)
@@ -42,9 +46,9 @@ void SICK400::continuousStart()
        <<quint8(0x71)<<quint8(0x64)<<quint8(0x61)
       <<quint8(0x74)<<quint8(0x61)<<quint8(0x20)<<quint8(0x30)<<quint8(0x30)
      <<quint8(0x32)<<quint8(0x30)<<quint8(0x77);
-    emit sig_statusTable("SICK400 continuousStart block:"+block);
-    qDebug() << "request at:" << QTime::currentTime();
-    qDebug()<<"SICK400 continuousStart block:"<<block;
+//    emit sig_statusTable("SICK400 continuousStart block:"+block);
+//    qDebug() << "request at:" << QTime::currentTime();
+//    qDebug()<<"SICK400 continuousStart block:"<<block;
     m_tcpSocket.write(block);
 }
 
@@ -96,7 +100,7 @@ void SICK400::extractData()
     ba1 = m_dataRecieved.at(18);
     ba2 = m_dataRecieved.at(19);
     int dataNum = ba1 + 256*ba2;
-    qDebug()<<"SICK400 recv data number is:"<<dataNum;
+    //qDebug()<<"SICK400 recv data number is:"<<dataNum;
     for(int i=0;i<dataNum;i++)
     {
         ba1 = m_dataRecieved.at(28 + 3*i);
@@ -119,8 +123,8 @@ QVector<int> SICK400::beaconLength(const int threshold)
 {
     QVector<int> binary_vec;
     QVector<int> beaconLength;
-    qDebug()<<"RIS are:"<<m_ris;
-    qDebug()<<"the dist are :"<<m_distance;
+    //qDebug()<<"RIS are:"<<m_ris;
+    //qDebug()<<"the dist are :"<<m_distance;
     for(int i = 0;i < m_ris.size();i++)
     {
         if(m_ris.at(i) > threshold)
@@ -230,14 +234,37 @@ void SICK400::slot_on_readMessage()
 {
     m_dataRecieved.clear();
     m_dataRecieved = m_tcpSocket.readAll();
-    qDebug()<<"SICK 400 recv frame length is:"<<m_dataRecieved.size()<<endl;
+    if(m_dataRecieved.size()==0)
+    {
+        emit sig_statusTable("SICK400 error:no data");
+        return;
+    }
+    //qDebug()<<"SICK 400 recv frame length is:"<<m_dataRecieved.size()<<endl;
     extractData();
 }
 
-void SICK400::slot_on_error(QAbstractSocket::SocketError)
+void SICK400::slot_on_disconnected()
 {
-    emit sig_statusTable("SICK400 TCP Socket error:");
-    qDebug()<<"SICK400 TCP Socket error:"<<m_tcpSocket.errorString();
+    qDebug()<<"slot_on_disconnected()";
+}
+
+void SICK400::slot_on_error(QAbstractSocket::SocketError socktError)
+{
+    qDebug()<<"SICK 400 error";
+    switch(socktError)
+    {
+    case QAbstractSocket::RemoteHostClosedError:
+        emit sig_statusTable("SICK400 RemoteHostClosedError:"+m_tcpSocket.errorString());
+        break;
+    case QAbstractSocket::DatagramTooLargeError:
+        emit sig_statusTable("SICK400 DatagramTooLargeError:"+m_tcpSocket.errorString());
+        break;
+    case QAbstractSocket::NetworkError:
+        emit sig_statusTable("SICK400 NetworkError:"+m_tcpSocket.errorString());
+        break;
+    default:
+        break;
+    }
     m_isOn = false;
 }
 

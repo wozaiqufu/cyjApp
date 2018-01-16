@@ -37,10 +37,15 @@ public:
 	* if in AUTO MODE, update acc, angle according to algorithm type
 	* */
 	void	update();
-	/*
-	* returns final left 
-	* @return turn left command(opposite when backward)
-	* */
+    /*
+    * finish auto or teach
+    * @return
+    * */
+    void finish();
+    /*
+    * returns final left
+    * @return turn left command(opposite when backward)
+    * */
     int     left() const;
 	/*
 	* returns final right
@@ -57,13 +62,16 @@ public:
 	* @return deacc command
 	* */
     int     deaccelerator() const;
+    void    testTrackMemory();
+    void    testTrackMemory2();
+    void    loadData();
 private:
 	/*
 	* increase to certain value specified with inc,return true if succeed
 	* add a noise scale if not increase to (origin+inc) EXACTLY
 	* @return true if succeed
 	* */
-	bool isCertainMileIncrement(const int mile,const int inc);
+    bool isCertainMileIncrement(const int mile);
 signals:
     void sig_statusTable(QString);
 public slots:
@@ -71,6 +79,7 @@ public slots:
     void slot_on_updateBeaconLength(QVector<int> vec);
     void slot_on_updateCourseAngle(int angle);
     void slot_on_updateLateralOffset(int of);
+    void slot_on_updateMile(int mile);
 	void slot_on_updateControlInfo(QVector<int> vec);
 private:
     int                 m_courseAngle;
@@ -88,5 +97,4 @@ private:
     static const int    MILEDELTA = 20;//path.txt mile increment is 20cm
     static const double RATIO = 0.8;//k1*track + k2*pid k2=RATIO
 };
-
 #endif // AUTOALGORITHM_H
