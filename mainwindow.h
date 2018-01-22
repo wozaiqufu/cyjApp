@@ -52,11 +52,11 @@ private slots:
     void slot_on_startTeach();
     void slot_on_mainTimer_timeout();
     void slot_on_teachTimer_timeout();
-    void slot_on_CANTest_timeout();
+    void slot_on_mileAccumulator_timeout();
     void slot_on_setAlgorithm();
 	void slot_on_setMode();
-    //test
-    void slot_on_writeCAN();
+    void slot_on_startAccumMile();
+    void slot_on_stopAccumMile();
 public slots:
     void slot_on_updateStatusTable(QString qstr);
     void slot_on_updateCAN304(QVector<int> vec);
@@ -77,14 +77,15 @@ private:
     QThread					m_thread_CAN;
     QTimer					m_timer_main;
     QTimer					m_timer_surface;
-    QTimer                  m_timer_CANTest;
+    QTimer                  m_timer_mileAccumulator;
     /*************************************************************************
      * vehicle states to surface
 	 *
 	/*************************************************************************/
     Direction m_direction;
 	ControlMode m_controlMode;
-    int m_mileMeter;//in cm
+    int m_mileInstant;//in cm
+    int m_mileMeter;
 };
 
 #endif // MAINWINDOW_H

@@ -34,52 +34,10 @@
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="1">
-      <widget class="QPushButton" name="pushButton_4">
-       <property name="text">
-        <string>stop SICK</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="pushButton_initSurface">
-       <property name="text">
-        <string>init Surface</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QPushButton" name="pushButton_connect400">
-       <property name="text">
-        <string>connectSICK400</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="pushButton_testAlgorithm">
        <property name="text">
         <string>Test Algorithm</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="pushButton_stop400">
-       <property name="text">
-        <string>stopSICK400</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="pushButton_2">
-       <property name="text">
-        <string>saveAll</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QPushButton" name="pushButton_5">
-       <property name="text">
-        <string>init CAN</string>
        </property>
       </widget>
      </item>
@@ -90,10 +48,38 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="1">
+      <widget class="QPushButton" name="pushButton_accuMile">
+       <property name="text">
+        <string>mileAcc</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="1">
       <widget class="QPushButton" name="pushButton">
        <property name="text">
         <string>connect SICK511</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pushButton_4">
+       <property name="text">
+        <string>stop SICK</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="text">
+        <string>saveAll</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="pushButton_initSurface">
+       <property name="text">
+        <string>init Surface</string>
        </property>
       </widget>
      </item>
@@ -111,10 +97,31 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="pushButton_writeCAN">
+     <item row="0" column="0">
+      <widget class="QPushButton" name="pushButton_5">
        <property name="text">
-        <string>write CAN</string>
+        <string>init CAN</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="pushButton_connect400">
+       <property name="text">
+        <string>connectSICK400</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_stop400">
+       <property name="text">
+        <string>stopSICK400</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QPushButton" name="pushButton_stopMileAcc">
+       <property name="text">
+        <string>stopMileAcc</string>
        </property>
       </widget>
      </item>
@@ -194,7 +201,7 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLabel" name="label_velocity">
+      <widget class="QLabel" name="label_mile">
        <property name="text">
         <string>TextLabel</string>
        </property>
@@ -231,7 +238,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>Velocity</string>
+        <string>mile</string>
        </property>
       </widget>
      </item>
