@@ -38,10 +38,13 @@ signals:
     void sig_informAlgrithmMile(int);
     void finished();
     void sig_statusTable(QString);
+    void sig_spliceAngle2Algorithm(int);
+    //for test
+    void sig_angleCmm2Algorithm(int);
 private slots:
     void slot_on_initSICK511();
     void slot_on_stopSICK511();
-    void slot_on_initCAN();
+    bool slot_on_initCAN();
     void slot_on_initSICK400();
     void slot_on_stopSICK400();
     void slot_on_readFrame();

@@ -104,7 +104,7 @@ void SICK511::extractDISTData()
     //crop Angular step width
     int AngularStep_Begin = startAngle_End + 1;
     QByteArray angularStep = m_dataRecieved.mid(AngularStep_Begin,m_dataRecieved.indexOf(" ",AngularStep_Begin)-AngularStep_Begin);
-    qDebug()<<"angular step:"<<angularStep;
+    //qDebug()<<"angular step:"<<angularStep;
     //crop Number Data
     int NumberData_Begin = m_dataRecieved.indexOf(" ",AngularStep_Begin) + 1;
     QByteArray numberData = m_dataRecieved.mid(NumberData_Begin,m_dataRecieved.indexOf(" ",NumberData_Begin)-NumberData_Begin);
@@ -115,7 +115,7 @@ void SICK511::extractDISTData()
 	m_angleResolution = 180.0 / (m_numberDataOneSocket - 1);
 	//qDebug() << "m_angleResolution is:" << m_angleResolution;
     int data_index = m_dataRecieved.indexOf(" ",NumberData_Begin) +1;
-     qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
+     //qDebug()<<"number data in decimal :"<<m_numberDataOneSocket;
     //crop data begins
      m_DISTdata.clear();//CAUTION!m_data_forward vector must be cleaned before new data is pushed!
      for(int i=0;i<m_numberDataOneSocket;i++)
@@ -131,7 +131,7 @@ void SICK511::extractDISTData()
          }
          data_index = m_dataRecieved.indexOf(" ",data_index) + 1;
      }
-     qDebug() << "dist of " + m_name + ":" << m_DISTdata;
+     //qDebug() << "dist of " + m_name + ":" << m_DISTdata;
      //qDebug()<<"size of m_data_forward:"<<m_data_forward.size();
 }
 
@@ -198,8 +198,7 @@ int SICK511::courseAngle()
 	{
 		return m_courseAngle;
 	}
-    //qDebug()<<"courseAngle is triggered!";
-    //qDebug()<<"m_currentDirection:"<<m_currentDirection;
+    //qDebug()<<"m_angleResolution:"<<m_angleResolution;
     int courseAngle_right = 0;
     int courseAngle_left = 0;
 	int courseAngle = 0;
@@ -208,7 +207,7 @@ int SICK511::courseAngle()
 		//right side
 		double sumCourse = 0;
 		int validCount = 0;
-        qDebug() << "total index is:" << ANGLESACLE / m_angleResolution;
+        //qDebug() << "total index is:" << ANGLESACLE / m_angleResolution;
         for (int i = 0; i<ANGLESACLE/m_angleResolution; i++)
 		{
 			//l1!=0&&l2!=0
@@ -228,7 +227,7 @@ int SICK511::courseAngle()
 			//qDebug()<<"l3:"<<l3;
 			double cos_beta = (pow(l1, 2) + pow(l3, 2) - pow(l2, 2)) / (2 * l1*l3);
 			//qDebug()<<"cos_beta"<<cos_beta;
-            double icourse = 90 + (STARTANGLE + i) - acos(cos_beta) / ANGLEDEGREE2RADIUS;
+            double icourse = 90 + (STARTANGLE + i * m_angleResolution) - acos(cos_beta) / ANGLEDEGREE2RADIUS;
 			//qDebug()<<"icourse:"<<icourse;
 			//sum of course
 			sumCourse += icourse;
@@ -255,9 +254,9 @@ int SICK511::courseAngle()
 			}
 			//qDebug()<<"Valid count======:"<<validCount;
 			//beta
-            double l1 = m_DISTdata.at(angle2index(180 - STARTANGLE - i));
+            double l1 = m_DISTdata.at(angle2index(180 - STARTANGLE) - i);
             //qDebug() << "left l1 data index:" << angle2index(180 - STARTANGLE - i);
-            double l2 = m_DISTdata.at(angle2index(180 - STARTANGLE - L1L2ANGLE - i));
+            double l2 = m_DISTdata.at(angle2index(180 - STARTANGLE - L1L2ANGLE) - i);
             //qDebug() << "left l2 data index:" << angle2index(180 - STARTANGLE - L1L2ANGLE - i);
             double l3 = sqrt(pow(l1, 2) + pow(l2, 2) - 2 * l1*l2*cos(L1L2ANGLE*ANGLEDEGREE2RADIUS));
 			//qDebug()<<"l1:"<<l1;
@@ -266,7 +265,7 @@ int SICK511::courseAngle()
 			double cos_beta = (pow(l1, 2) + pow(l3, 2) - pow(l2, 2)) / (2 * l1*l3);
 			//qDebug()<<"beta:"<<acos(cos_beta)/m_Angle_degree2Radian;
 			//sum of beta
-            double icourse = acos(cos_beta) / ANGLEDEGREE2RADIUS - 90 - i;
+            double icourse = acos(cos_beta) / ANGLEDEGREE2RADIUS - 90 - i * m_angleResolution - STARTANGLE;
 			//qDebug()<<"icourse"<<icourse;
 			sumCourse += icourse;
 			validCount++;
@@ -280,13 +279,15 @@ int SICK511::courseAngle()
 			courseAngle_left = sumCourse / validCount;
 		}
 
-		courseAngle = (courseAngle_left + courseAngle_right) / 2;
+        //courseAngle = (courseAngle_left + courseAngle_right) / 2;
+        courseAngle = courseAngle_left;
 		m_courseAngle = courseAngle;
+        //qDebug()<<"courseangle of "<<m_name<<m_courseAngle;
 	}
 	//return (courseAngle_left+courseAngle_right)/2;
 	//qDebug()<<"=====================================================>";
 	//return courseAngle_right;//is ok
-	qDebug() << "course angle is:" << m_courseAngle;
+    //qDebug() << "course angle is:" << m_courseAngle;
 	return m_courseAngle;
 }
 
@@ -297,12 +298,13 @@ int SICK511::lateralOffset()
 	{
 		return m_lateralOffset;
 	}
-    qDebug()<<"courseAngle is triggered!";
+    //qDebug()<<"courseAngle is triggered!";
      //qDebug()<<"m_currentDirection:"<<m_currentDirection;
     //qDebug()<<"m_data_forward"<<m_data_forward;
     int lateral = 1;
 	if ((m_DISTdata.size() == m_numberDataOneSocket) && (m_angleResolution>0.20))
 	{
+        //qDebug()<<"m_angleResolution>0.20"<<m_angleResolution;
 		double sumH1 = 0;
 		double sumH2 = 0;
 		double H1 = 0;
@@ -329,17 +331,18 @@ int SICK511::lateralOffset()
 			return 2000;
 		}
 		H1 = sumH1 / validCount;
-		//            qDebug()<<"H1"<<H1;
+       //qDebug()<<"H1"<<H1;
+       //left
 		validCount = 0;
         for (int i = 0; i < ANGLESACLE/m_angleResolution; i++)
 		{
 			//left side h2
-            double l = m_DISTdata.at(angle2index(180 - STARTANGLE) - i);
+            double l = m_DISTdata.at(angle2index(180 - STARTANGLE) - i*m_angleResolution);
 			if (l == 0)
 			{
 				continue;
 			}
-            double h2 = l*cos(ANGLEDEGREE2RADIUS*(m_courseAngle + STARTANGLE + angle2index(i)));
+            double h2 = l*cos(ANGLEDEGREE2RADIUS*(m_courseAngle + STARTANGLE + i * m_angleResolution));
 			sumH2 += h2;
 			validCount++;
 		}
@@ -348,11 +351,14 @@ int SICK511::lateralOffset()
 			qDebug() << "no data for H1";
 			return 2000;
 		}
-		H2 = sumH2 / validCount;
+        H2 = sumH2 / validCount;
 
-		lateral = (H2 - H1) / 2;
+        //lateral = (H2 - H1) / 2;
+        lateral = H2;
+        qDebug()<<"H2"<<H2;
 		m_lateralOffset = lateral;
 		return m_lateralOffset;
+        qDebug()<<"m_lateralOffset of "<<m_name<<m_lateralOffset;
 	}
     else return m_lateralOffset;
 }

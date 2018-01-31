@@ -10,40 +10,42 @@ autoAlgorithm::autoAlgorithm(QObject *parent) : QObject(parent),
   m_stage(Auto),
   m_type(PIDType),
   m_mile_saved(0),
-  m_mile_current(0)
+  m_mile_current(0),
+  m_left(0),
+  m_right(0),
+  m_acc(0),
+  m_spliceAnlge(0),
+  m_angleCmm(0)
 {
-    p_track = new TrackMemory;
+    //p_track = new TrackMemory;
+    p_disntancePID = new PID(0.1,20,-20,0.08,0.05,0.00001);
+    p_anglePID = new PID(0.005,80,-80,6,0.08,0.14);
+    p_disntancePID->setAllowError(15);
+    p_anglePID->setAllowError(0.4);
 }
 
 void autoAlgorithm::update()
 {
-	switch (m_stage)
-	{
-	case autoAlgorithm::Teach:
-        if(p_track->isDataLoaded("beaconRaw.txt"))
-		p_track->loadData("beaconRaw.txt");
-        if (isCertainMileIncrement(m_mile_current))
-		{
-            p_track->savePath(m_mile_current, m_mile_acc_deacc_left_right.at(0)
-                              ,m_mile_acc_deacc_left_right.at(1)
-                              ,m_mile_acc_deacc_left_right.at(2)
-                              ,m_mile_acc_deacc_left_right.at(3));
-            m_mile_saved = m_mile_acc_deacc_left_right.at(0);
-		}
-        if (p_track->matchBeacon(m_beaconLength))
-		{
-            p_track->saveBeacon(p_track->currentBeacon(),m_mile_acc_deacc_left_right.at(0));
-		}
-		break;
-	case autoAlgorithm::Auto:
-        p_track->loadData("path.txt");
-        p_track->loadData("beacon.txt");
-        //double elapsedTime = m_time.restart()/1000.0;
-        //QVector<int> track = p_track->update(m_mile_current,m_beaconLength);
-		break;
-	default:
-		break;
+    double spliceAngle = p_disntancePID->calculate(400,m_lateralOffset);
+     qDebug()<<"m_lateralOffset:"<<m_lateralOffset;
+    qDebug()<<"distance PID output:"<<0-spliceAngle;
+    double pidOut = p_anglePID->calculate(0-spliceAngle,m_spliceAnlge);
+//    double pidOut = p_anglePID->calculate(m_angleCmm,m_spliceAnlge);
+    //qDebug()<<"m_angleCmm:"<<m_angleCmm;
+    qDebug()<<"spliceAnlge:"<<m_spliceAnlge;
+    if(pidOut<0)
+    {
+        m_right = 0;
+        m_left = -pidOut+30;
+        m_acc = 45;
     }
+    else
+    {
+        m_right = pidOut+35;
+        m_left = 0;
+        m_acc = 45;
+    }
+
 }
 
 void autoAlgorithm::finish()
@@ -83,22 +85,22 @@ void autoAlgorithm::setAlgorithmType(const int type)
 
 int autoAlgorithm::left() const
 {
-    return -1;
+    return m_left;
 }
 
 int autoAlgorithm::right() const
 {
-     return -1;
+     return m_right;
 }
 
 int autoAlgorithm::accelerator() const
 {
-     return -1;
+     return m_acc;
 }
 
 int autoAlgorithm::deaccelerator() const
 {
-    return -1;
+    return 0;
 }
 
 void autoAlgorithm::testTrackMemory()
@@ -136,13 +138,13 @@ void autoAlgorithm::slot_on_updateBeaconLength(QVector<int> vec)
 void autoAlgorithm::slot_on_updateCourseAngle(int angle)
 {
     m_courseAngle = angle;
-    qDebug()<<"course angle is :"<<angle;
+    //qDebug()<<"course angle is :"<<angle;
 }
 
 void autoAlgorithm::slot_on_updateLateralOffset(int of)
 {
-    m_lateralOffset = of;
-    qDebug()<<"m_lateralOffset is :"<<of;
+    m_lateralOffset = of/10;
+    //qDebug()<<"m_lateralOffset is :"<<of;
 }
 
 void autoAlgorithm::slot_on_updateMile(int mile)
@@ -153,7 +155,17 @@ void autoAlgorithm::slot_on_updateMile(int mile)
 void autoAlgorithm::slot_on_updateControlInfo(QVector<int> vec)
 {
 	m_mile_acc_deacc_left_right = vec;
-	m_mile_current = vec.at(0);
+    m_mile_current = vec.at(0);
+}
+
+void autoAlgorithm::slot_on_updateSpliceAngle(int angle)
+{
+    m_spliceAnlge = angle;
+}
+
+void autoAlgorithm::slot_on_updateAngleCommand(int angle)
+{
+    m_angleCmm = angle;
 }
 
 bool autoAlgorithm::isCertainMileIncrement(const int mile)

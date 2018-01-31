@@ -81,6 +81,9 @@ public slots:
     void slot_on_updateLateralOffset(int of);
     void slot_on_updateMile(int mile);
 	void slot_on_updateControlInfo(QVector<int> vec);
+    void slot_on_updateSpliceAngle(int angle);
+    //for test
+    void slot_on_updateAngleCommand(int angle);
 private:
     int                 m_courseAngle;
     int                 m_lateralOffset;
@@ -91,10 +94,17 @@ private:
     int                 m_mile_current;//current mile
     StageType           m_stage;//teach mode or auto mode
     AlgorithmType       m_type;//PID or TrackMemory
-    QTime               m_time;
+    QTime                                                 m_time;
     TrackMemory         *p_track;
-    PID                 *p_pid;
+    PID                 *p_disntancePID;
+    PID                 *p_anglePID;
     static const int    MILEDELTA = 20;//path.txt mile increment is 20cm
     static const double RATIO = 0.8;//k1*track + k2*pid k2=RATIO
+    int                 m_left;
+    int                 m_right;
+    int                 m_acc;
+    int                 m_spliceAnlge;
+    //for test
+    int                 m_angleCmm;
 };
 #endif // AUTOALGORITHM_H

@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 m_controlMode(Local),
 m_mileInstant(0),
 m_mileMeter(0),
+m_speed(0),
 m_direction(Forward),
 m_bIsSurfaceConnected(false),
 m_bIsCANConnected(false)
@@ -18,11 +19,15 @@ m_bIsCANConnected(false)
     ui->setupUi(this);
 	initStatusTable();
     initCYJActualData();
-    //slot_on_initSurface();
-	connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(slot_on_initSICK511()));
+    //init CAN
+    if( slot_on_initCAN())
+        slot_on_readFrame();
+    //init SICK511
+    slot_on_initSICK511();
+    //connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(slot_on_initSICK511()));
 	connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(slot_on_stopSICK511()));
-    connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
-    connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
+//    connect(ui->pushButton_5,SIGNAL(clicked()),this,SLOT(slot_on_initCAN()));
+//    connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(slot_on_readFrame()));
     connect(ui->pushButton_initSurface,SIGNAL(clicked()),this,SLOT(slot_on_initSurface()));
     connect(ui->pushButton_connect400,SIGNAL(clicked()),this,SLOT(slot_on_initSICK400()));
     connect(ui->pushButton_stop400,SIGNAL(clicked()),this,SLOT(slot_on_stopSICK400()));
@@ -31,6 +36,8 @@ m_bIsCANConnected(false)
     connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm2()));
     connect(ui->pushButton_loaddata,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithmLoadData()));
     connect(ui->pushButton_startTeach,SIGNAL(clicked()),this,SLOT(slot_on_startTeach()));
+    connect(ui->pushButton_stretch,SIGNAL(clicked()),this,SLOT(slot_on_stretch()));
+    connect(ui->pushButton_retract,SIGNAL(clicked()),this,SLOT(slot_on_retract()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
     connect(&m_timer_mileAccumulator,SIGNAL(timeout()),this,SLOT(slot_on_mileAccumulator_timeout()));
 	QButtonGroup* check_group[2];
@@ -49,7 +56,7 @@ m_bIsCANConnected(false)
 	connect(ui->checkBox_mixed, SIGNAL(clicked()), this, SLOT(slot_on_setAlgorithm()));
 	connect(ui->checkBox_teach, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
 	connect(ui->checkBox_auto, SIGNAL(clicked()), this, SLOT(slot_on_setMode()));
-    m_timer_main.start(1);
+    m_timer_main.start(5);
     //signals:mainwindow,slots:autoAlgorithm
     connect(this,SIGNAL(sig_autoInfo2Algorithm(bool)),&m_algorithm,SLOT(slot_on_updateControlMode(bool)));
     //signals:SICK400,slots:algorithm
@@ -61,6 +68,8 @@ m_bIsCANConnected(false)
     connect(&m_sick511_b, SIGNAL(sigUpdateLateralOffset(int)), &m_algorithm, SLOT(slot_on_updateLateralOffset(int)));
     //signals:MainWindow,slots:Algorithm
     connect(this, SIGNAL(sig_informAlgrithmMile(int)), &m_algorithm, SLOT(slot_on_updateMile(int)));
+    connect(this,SIGNAL(sig_spliceAngle2Algorithm(int)),&m_algorithm,SLOT(slot_on_updateSpliceAngle(int)));
+    connect(this,SIGNAL(sig_angleCmm2Algorithm(int)),&m_algorithm,SLOT(slot_on_updateAngleCommand(int)));
 }
 
 MainWindow::~MainWindow()
@@ -171,7 +180,7 @@ void MainWindow::slot_on_stopSICK511()
     emit sig_stopPermanentReq();
 }
 
-void MainWindow::slot_on_initCAN()
+bool MainWindow::slot_on_initCAN()
 {
     m_can.moveToThread(&m_thread_CAN);
     m_timer_CAN.setInterval(1);
@@ -183,10 +192,7 @@ void MainWindow::slot_on_initCAN()
     connect(&m_can,SIGNAL(sig_connectState(bool)),this,SLOT(slot_on_CANStateChanged(bool)));
     connect(&m_timer_CAN,SIGNAL(timeout()),&m_can,SLOT(slot_dowork()));
     connect(&m_thread_CAN,SIGNAL(finished()),&m_thread_CAN,SLOT(deleteLater()));
-    m_can.init(0);
-//    //for test only
-//    _CANReady = true;
-    //     //_can8900.CAN_Init(0);
+    return m_can.init(0);//0 for CAN0
 }
 
 void MainWindow::slot_on_initSICK400()
@@ -221,86 +227,25 @@ void MainWindow::slot_on_initSurface()
     m_timer_surface.start(10);
 }
 
-//write
 void MainWindow::slot_on_testAlgorithm()
 {
-      m_algorithm.testTrackMemory();
-
-//    QFile dataFile("beaconRaw.dat");
-//    dataFile.open(QIODevice::WriteOnly);
-//    QDataStream dataStream(&dataFile);
-//    dataStream <<1<<2;
-
-//    QFile dataFile("beacon.dat");
-//    dataFile.open(QIODevice::WriteOnly);
-//    QDataStream dataStream(&dataFile);
-//    for(int i=0;i<1000;i++)
-//    {
-//        dataStream <<20+2*i<<100+10*i;
-//    }
+    emit sig_angleCmm2Algorithm(-15);
 }
 
-//read
+
 void MainWindow::slot_on_testAlgorithm2()
 {
-    m_algorithm.testTrackMemory2();
-//    QList<int> m_beacon;
-//    QFile readFile("beaconRaw.dat");
-//    if (readFile.open(QIODevice::ReadOnly))
-//    {
-//        qDebug()<<"file is opened!";
-//        QDataStream readStream(&readFile);
-//        while (!readStream.atEnd())
-//        {
-//            int value;
-//            readStream >> value;
-//            qDebug()<<"value:"<<value;
-//            m_beacon.append(value);
-//        }
-//        qDebug()<<"m_beacon:"<<m_beacon;
-//    }
-
-
-//        QList<int> length;
-//        QList<int> mile;
-//        QFile readFile("beacon.dat");
-//        if (readFile.open(QIODevice::ReadOnly))
-//        {
-//            qDebug()<<"file is opened!";
-//            QDataStream readStream(&readFile);
-//            int index = 0;
-//            while (!readStream.atEnd())
-//            {
-//                int value;
-//                readStream >> value;
-//                index++;
-//                qDebug()<<"value:"<<value;
-//                if(index%2==0)
-//                    length.append(value);
-//                else
-//                    mile.append(value);
-//            }
-//            qDebug()<<"length:"<<length;
-//            qDebug()<<"mile:"<<mile;
-    //        }
+   emit sig_angleCmm2Algorithm(15);
 }
 
 void MainWindow::slot_on_testAlgorithmLoadData()
 {
     m_algorithm.loadData();
 }
-
+//for test only start auto
 void MainWindow::slot_on_startTeach()
 {
-        QFile dataFile("beaconRaw.dat");
-        if(!dataFile.exists())
-        {
-            dataFile.open(QIODevice::WriteOnly);
-            QDataStream dataStream(&dataFile);
-            dataStream <<200<<300<<400<<500<<600<<700;
-        }
-       connect(&m_timer_Teach,SIGNAL(timeout()),this,SLOT(slot_on_teachTimer_timeout()));
-       m_timer_Teach.start(30);
+    m_controlMode = Auto;
 }
 
  void MainWindow::slot_on_teachTimer_timeout()
@@ -312,6 +257,7 @@ void MainWindow::slot_on_startTeach()
  void MainWindow::slot_on_mileAccumulator_timeout()
  {
      m_mileMeter += m_mileInstant;
+
  }
 /****************************************************************************/
 /****************************************************************************/
@@ -339,6 +285,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     {
         emit sig_autoInfo2Algorithm(true);
         emit sig_informAlgrithmMile(m_mileMeter);
+        emit sig_spliceAngle2Algorithm(m_cyjData_actual.spliceAngle-(LEFTLIMIT+RIGHTLIMNIT)/2);
     }
     else
     {
@@ -451,36 +398,46 @@ void MainWindow::slot_on_mainTimer_timeout()
         {
         m_algorithm.update();
         uchar data[8] = {0,0,0,0,0,0,0,0};
-        data[0] = m_cyjData_surface.forward +
-                2*m_cyjData_surface.back +
-                4*m_cyjData_surface.neutral +
-                8*m_cyjData_surface.stop +
-                16*m_cyjData_surface.scram +
-                32*m_cyjData_surface.light +
-                64*m_cyjData_surface.horn +
-                128*m_cyjData_surface.zero;
-        data[1] = 4*m_cyjData_surface.start +
-                8*m_cyjData_surface.flameout +
-                16*m_cyjData_surface.middle +
-                32*m_cyjData_surface.warn1 +
-                64*m_cyjData_surface.warn2 +
-                128*m_cyjData_surface.warn3;
-        data[2] = m_cyjData_surface.rise;
-        data[3] = m_cyjData_surface.fall;
-        data[4] = m_cyjData_surface.turn;
-        data[5] = m_cyjData_surface.back;
-        data[6] = m_cyjData_surface.left;
-        data[7] = m_algorithm.left();
-       // m_can.slot_on_sendFrame(0x304,8,data);
-        data[0] = m_algorithm.right();
-        data[1] = m_algorithm.accelerator();
-        data[2] = m_algorithm.deaccelerator();
+        data[0] = 1 +//back
+                2*0 +//forward
+                4*0 +//neutral
+                8*0 +//stop
+                16*m_cyjData_actual.scram +
+                32*m_cyjData_actual.light +
+                64*m_cyjData_actual.horn +
+                128*m_cyjData_actual.zero;
+        data[1] = 4*m_cyjData_actual.start +
+                8*m_cyjData_actual.flameout +
+                16*m_cyjData_actual.middle +
+                32*m_cyjData_actual.warn1 +
+                64*m_cyjData_actual.warn2 +
+                128*m_cyjData_actual.warn3;
+        data[2] = m_cyjData_actual.rise;
+        data[3] = m_cyjData_actual.fall;
+        data[4] = m_cyjData_actual.turn;
+        data[5] = m_cyjData_actual.back;
+        data[6] = m_algorithm.left();
+        data[7] = m_algorithm.right();
+//        data[6] = m_hydraulic1;
+//        data[7] = m_hydraulic2;
+//        qDebug()<<"m_hydraulic1:"<<m_hydraulic1;
+//        qDebug()<<"m_hydraulic2:"<<m_hydraulic2;
+        m_can.slot_on_sendFrame(0x161,8,data);
+        data[0] = m_algorithm.accelerator();
+        data[1] = m_algorithm.deaccelerator();
+//        data[0] = 0;
+//        data[1] = 0;
+        data[2] = 0;
         data[3] = 0;
         data[4] = 0;
         data[5] = 0;
         data[6] = 0;
         data[7] = 0;
-       // m_can.slot_on_sendFrame(0x305,8,data);
+        qDebug()<<"m_algorithm.left():"<<m_algorithm.left();
+        qDebug()<<"m_algorithm.right():"<<m_algorithm.right();
+        qDebug()<<"m_algorithm.accelerator():"<<m_algorithm.accelerator();
+        qDebug()<<"m_algorithm.deaccelerator():"<<m_algorithm.deaccelerator();
+        m_can.slot_on_sendFrame(0x261,8,data);
         break;
         }
     default:
@@ -494,11 +451,11 @@ void MainWindow::slot_on_mainTimer_timeout()
     //emit sig_informDirection(Backward);
 
     //UI Update:update vehicle params
-    ui->label_spliceAngle->setText(QString::number(m_cyjData_actual.spliceAngle));
+    ui->label_spliceAngle->setText(QString::number(m_cyjData_actual.spliceAngle-(LEFTLIMIT+RIGHTLIMNIT)/2));
     ui->label_mile->setText(QString::number(m_mileMeter));
-    //ui->label_courseAngle->setText(QString::number(m_courseAngle));
     ui->label_engineSpeed->setText(QString::number(m_cyjData_actual.engine));
-    //ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
+    ui->label_speed->setText(QString::number(m_speed));
+//    ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_cyjData_actual.neutral));
     switch (m_controlMode)
     {
@@ -592,7 +549,7 @@ void MainWindow::slot_on_stopAccumMile()
 
 void MainWindow::slot_on_updateCAN304(QVector<int> vec)
 {
-    qDebug()<<"CAN304:"<<vec;
+    //qDebug()<<"CAN304:"<<vec;
     if(vec.size()<8)
     {
         return;
@@ -716,7 +673,8 @@ void MainWindow::slot_on_updateCAN305(QVector<int> vec)
     m_cyjData_actual.spliceAngle = vec.at(4);
     m_cyjData_actual.temperature = vec.at(5);
     m_mileInstant = 1.08*(vec.at(6)*256 + vec.at(7));
-    //qDebug()<<"m_mileInstant:"<<m_mileInstant;
+    m_speed = m_mileInstant * 5;
+    qDebug()<<"m_mileInstant:"<<m_mileInstant;
 }
 
 void MainWindow::slot_on_surfaceUpdate(CYJData cyj)
