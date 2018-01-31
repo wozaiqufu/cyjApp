@@ -41,6 +41,7 @@ signals:
     void sigUpdateCAN304(QVector<int>);
     void sigUpdateCAN305(QVector<int>);
     void sig_statusTable(QString);
+    void sig_connectState(bool);
 public slots:
     void slot_on_sendFrame(ulong id, uchar length, uchar *data);
     void  slot_dowork();//timer to refresh data
@@ -58,6 +59,7 @@ private:
     fd_set m_rset;
     QVector<int> m_CAN304;
     QVector<int> m_CAN305;
+    bool   m_bIsconnected;
 };
 
 #endif // CANOBJ_H

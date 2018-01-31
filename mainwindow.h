@@ -62,6 +62,8 @@ public slots:
     void slot_on_updateCAN304(QVector<int> vec);
     void slot_on_updateCAN305(QVector<int> vec);
     void slot_on_surfaceUpdate(CYJData cyj);
+    void slot_on_surfaceStateChanged(bool b);
+    void slot_on_CANStateChanged(bool b);
 private:
     Ui::MainWindow *ui;
     CYJData m_cyjData_surface;
@@ -86,6 +88,8 @@ private:
 	ControlMode m_controlMode;
     int m_mileInstant;//in cm
     int m_mileMeter;
+    bool m_bIsSurfaceConnected;
+    bool m_bIsCANConnected;
 };
 
 #endif // MAINWINDOW_H

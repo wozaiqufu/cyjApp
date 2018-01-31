@@ -40,6 +40,7 @@ bool CAN::init(const int portIndex)
         emit sig_statusTable("bind failed!");
         return false;
     }
+    emit sig_connectState(true);
     emit sig_statusTable("init CAN succeed!");
     /*******************setup CAN filters***********************************************************************************/
 //    m_filter[0].can_id = 0x304|CAN_EFF_FLAG;
@@ -126,17 +127,20 @@ void CAN::handle_err_frame(const can_frame *fr)
     if(fr->can_id & CAN_ERR_TX_TIMEOUT)
     {
         qDebug()<<"CAN_ERR_TX_TIMEOUT";
+        emit sig_connectState(false);
     }
     if(fr->can_id & CAN_ERR_LOSTARB)
     {
         qDebug()<<"CAN_ERR_LOSTARB";
         qDebug()<<fr->data[1];
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_CRTL)
     {
         qDebug()<<"CAN_ERR_CRTL";
         qDebug()<<fr->data[1];
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_PROT)
@@ -144,27 +148,32 @@ void CAN::handle_err_frame(const can_frame *fr)
         qDebug()<<"CAN_ERR_PROT";
         qDebug()<<fr->data[2];
         qDebug()<<fr->data[3];
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_TRX)
     {
         qDebug()<<"CAN_ERR_TRX";
         qDebug()<<fr->data[4];
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_BUSOFF)
     {
         qDebug()<<"CAN_ERR_BUSOFF";
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_BUSERROR)
     {
         qDebug()<<"CAN_ERR_BUSERROR";
+        emit sig_connectState(false);
     }
 
     if(fr->can_id & CAN_ERR_RESTARTED)
     {
         qDebug()<<"CAN_ERR_RESTARTED";
+        emit sig_connectState(false);
     }
 }
 
