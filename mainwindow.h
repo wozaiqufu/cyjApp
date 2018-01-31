@@ -39,8 +39,6 @@ signals:
     void finished();
     void sig_statusTable(QString);
     void sig_spliceAngle2Algorithm(int);
-    //for test
-    void sig_angleCmm2Algorithm(int);
 private slots:
     void slot_on_initSICK511();
     void slot_on_stopSICK511();
@@ -49,8 +47,8 @@ private slots:
     void slot_on_stopSICK400();
     void slot_on_readFrame();
     void slot_on_initSurface();
-    void slot_on_testAlgorithm();
-    void slot_on_testAlgorithm2();
+//    void slot_on_testAlgorithm();
+//    void slot_on_testAlgorithm2();
     void slot_on_testAlgorithmLoadData();
     void slot_on_startTeach();
     void slot_on_mainTimer_timeout();
@@ -91,8 +89,11 @@ private:
 	ControlMode m_controlMode;
     int m_mileInstant;//in cm
     int m_mileMeter;
+    int m_speed;
     bool m_bIsSurfaceConnected;
     bool m_bIsCANConnected;
+    const static int LEFTLIMIT = 4;
+    const static int RIGHTLIMNIT = 83;
 };
 
 #endif // MAINWINDOW_H

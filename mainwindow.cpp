@@ -32,12 +32,12 @@ m_bIsCANConnected(false)
     connect(ui->pushButton_connect400,SIGNAL(clicked()),this,SLOT(slot_on_initSICK400()));
     connect(ui->pushButton_stop400,SIGNAL(clicked()),this,SLOT(slot_on_stopSICK400()));
     connect(ui->pushButton_accuMile,SIGNAL(clicked()),this,SLOT(slot_on_startAccumMile()));
-    connect(ui->pushButton_testAlgorithm,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm()));
-    connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm2()));
+//    connect(ui->pushButton_testAlgorithm,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm()));
+//    connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithm2()));
     connect(ui->pushButton_loaddata,SIGNAL(clicked()),this,SLOT(slot_on_testAlgorithmLoadData()));
     connect(ui->pushButton_startTeach,SIGNAL(clicked()),this,SLOT(slot_on_startTeach()));
-    connect(ui->pushButton_stretch,SIGNAL(clicked()),this,SLOT(slot_on_stretch()));
-    connect(ui->pushButton_retract,SIGNAL(clicked()),this,SLOT(slot_on_retract()));
+//    connect(ui->pushButton_stretch,SIGNAL(clicked()),this,SLOT(slot_on_stretch()));
+//    connect(ui->pushButton_retract,SIGNAL(clicked()),this,SLOT(slot_on_retract()));
     connect(&m_timer_main,SIGNAL(timeout()),this,SLOT(slot_on_mainTimer_timeout()));
     connect(&m_timer_mileAccumulator,SIGNAL(timeout()),this,SLOT(slot_on_mileAccumulator_timeout()));
 	QButtonGroup* check_group[2];
@@ -227,16 +227,16 @@ void MainWindow::slot_on_initSurface()
     m_timer_surface.start(10);
 }
 
-void MainWindow::slot_on_testAlgorithm()
-{
-    emit sig_angleCmm2Algorithm(-15);
-}
+//void MainWindow::slot_on_testAlgorithm()
+//{
+//    emit sig_angleCmm2Algorithm(-15);
+//}
 
 
-void MainWindow::slot_on_testAlgorithm2()
-{
-   emit sig_angleCmm2Algorithm(15);
-}
+//void MainWindow::slot_on_testAlgorithm2()
+//{
+//   emit sig_angleCmm2Algorithm(15);
+//}
 
 void MainWindow::slot_on_testAlgorithmLoadData()
 {
@@ -454,7 +454,7 @@ void MainWindow::slot_on_mainTimer_timeout()
     ui->label_spliceAngle->setText(QString::number(m_cyjData_actual.spliceAngle-(LEFTLIMIT+RIGHTLIMNIT)/2));
     ui->label_mile->setText(QString::number(m_mileMeter));
     ui->label_engineSpeed->setText(QString::number(m_cyjData_actual.engine));
-    ui->label_speed->setText(QString::number(m_speed));
+//    ui->label_speed->setText(QString::number(m_speed));
 //    ui->label_lateralOffset->setText(QString::number(m_lateralOffset));
     ui->label_gear->setText(QString::number(m_cyjData_actual.neutral));
     switch (m_controlMode)
